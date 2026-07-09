@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
+import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 const apiBaseUrl = 'http://localhost:3000/api';
+const cartStorageKey = 'aromas_store_cart';
 
 void main() {
   runApp(const AromasStoreApp());
@@ -93,6 +96,12 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _catalogFuture = ApiService.loadCatalog();
+    _restoreCart();
+    _catalogFuture.then((_) {
+      if (mounted && _cartQuantities.isNotEmpty) {
+        _validateCart(showMessages: false);
+      }
+    });
     _heroTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || !_heroController.hasClients) return;
       final next = (_heroIndex + 1) % _slides.length;
@@ -135,6 +144,38 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _restoreCart() {
+    final savedCart = html.window.localStorage[cartStorageKey];
+    if (savedCart == null || savedCart.isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(savedCart);
+      if (decoded is! Map) return;
+      for (final entry in decoded.entries) {
+        final productId = int.tryParse(entry.key.toString());
+        final quantity = _asInt(entry.value);
+        if (productId != null && quantity > 0) {
+          _cartQuantities[productId] = quantity;
+        }
+      }
+    } catch (_) {
+      html.window.localStorage.remove(cartStorageKey);
+    }
+  }
+
+  void _persistCart() {
+    if (_cartQuantities.isEmpty) {
+      html.window.localStorage.remove(cartStorageKey);
+      return;
+    }
+
+    html.window.localStorage[cartStorageKey] = jsonEncode(
+      _cartQuantities.map(
+        (productId, quantity) => MapEntry('$productId', quantity),
+      ),
+    );
+  }
+
   Future<void> _addToCart(Product product) async {
     final stock = product.inventory?.stock ?? 0;
     if (stock <= 0) return;
@@ -149,12 +190,18 @@ class _HomePageState extends State<HomePage> {
       _cartQuantities[product.id] = currentQuantity + 1;
     });
 
-    _showSnackBar('${product.name} agregado al carrito.');
+    _persistCart();
+    _showSnackBar(
+      currentQuantity == 0
+          ? '${product.name} agregado al carrito.'
+          : 'Cantidad actualizada en el carrito.',
+    );
     await _validateCart(showMessages: false);
   }
 
   Future<void> _changeCartQuantity(Product product, int nextQuantity) async {
     final stock = product.inventory?.stock ?? 0;
+    final previousQuantity = _cartQuantities[product.id] ?? 0;
 
     setState(() {
       if (nextQuantity <= 0) {
@@ -164,7 +211,42 @@ class _HomePageState extends State<HomePage> {
       }
     });
 
+    _persistCart();
+    if (nextQuantity <= 0) {
+      _showUndoRemoveSnackBar(product, previousQuantity);
+    }
     await _validateCart(showMessages: false);
+  }
+
+  Future<void> _confirmClearCart() async {
+    if (_cartQuantities.isEmpty) return;
+
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Vaciar carrito'),
+          content: const Text(
+            'Esta accion quitara todos los productos del carrito. Puedes seguir comprando despues.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Vaciar carrito'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear == true) {
+      _clearCart();
+      _showSnackBar('Carrito vaciado correctamente.');
+    }
   }
 
   void _clearCart() {
@@ -172,6 +254,28 @@ class _HomePageState extends State<HomePage> {
       _cartQuantities.clear();
       _cartValidation = null;
     });
+    _persistCart();
+  }
+
+  Future<void> _startCheckout() async {
+    await _validateCart(showMessages: false);
+    final validation = _cartValidation;
+
+    if (validation == null) {
+      _showSnackBar('Valida el carrito antes de continuar.');
+      return;
+    }
+
+    if (!validation.valid) {
+      _showSnackBar(
+        validation.errors.isEmpty
+            ? 'Revisa el carrito antes de finalizar la compra.'
+            : validation.errors.first,
+      );
+      return;
+    }
+
+    _showSnackBar('Carrito listo. El siguiente modulo sera checkout y pedido.');
   }
 
   Future<void> _validateCart({bool showMessages = true}) async {
@@ -234,8 +338,12 @@ class _HomePageState extends State<HomePage> {
                 await _validateCart(showMessages: true);
                 refreshPanel(() {});
               },
-              onClear: () {
-                _clearCart();
+              onClear: () async {
+                await _confirmClearCart();
+                refreshPanel(() {});
+              },
+              onCheckout: () async {
+                await _startCheckout();
                 refreshPanel(() {});
               },
             );
@@ -248,6 +356,25 @@ class _HomePageState extends State<HomePage> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  void _showUndoRemoveSnackBar(Product product, int previousQuantity) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} eliminado del carrito.'),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Deshacer',
+          onPressed: () {
+            setState(() {
+              _cartQuantities[product.id] = previousQuantity;
+            });
+            _persistCart();
+            _validateCart(showMessages: false);
+          },
+        ),
+      ),
     );
   }
 
@@ -1284,6 +1411,7 @@ class CartPanel extends StatelessWidget {
     required this.onQuantityChanged,
     required this.onValidate,
     required this.onClear,
+    required this.onCheckout,
     super.key,
   });
 
@@ -1293,7 +1421,8 @@ class CartPanel extends StatelessWidget {
   final bool validating;
   final Future<void> Function(Product product, int quantity) onQuantityChanged;
   final Future<void> Function() onValidate;
-  final VoidCallback onClear;
+  final Future<void> Function() onClear;
+  final Future<void> Function() onCheckout;
 
   @override
   Widget build(BuildContext context) {
@@ -1391,7 +1520,12 @@ class CartPanel extends StatelessWidget {
                   runSpacing: 10,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: onClear,
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Continuar comprando'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => onClear(),
                       icon: const Icon(Icons.delete_outline),
                       label: const Text('Vaciar carrito'),
                     ),
@@ -1405,6 +1539,11 @@ class CartPanel extends StatelessWidget {
                             )
                           : const Icon(Icons.verified_outlined),
                       label: Text(validating ? 'Validando' : 'Validar carrito'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: validating ? null : () => onCheckout(),
+                      icon: const Icon(Icons.lock_outline),
+                      label: const Text('Finalizar compra'),
                     ),
                   ],
                 ),
@@ -1439,6 +1578,7 @@ class CartProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stock = product.inventory?.stock ?? 0;
+    final lineSubtotal = product.price * quantity;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1451,7 +1591,7 @@ class CartProductRow extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: SizedBox(width: 70, height: 70, child: ProductPlaceholder()),
+            child: ProductThumbnail(imageUrl: product.imageUrl),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1466,18 +1606,32 @@ class CartProductRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${product.brand.name} · Stock $stock',
+                  '${product.brand.name} · ${product.category.name}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Color(0xFF68645D)),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  '\$${product.price.toStringAsFixed(2)} c/u',
-                  style: const TextStyle(
-                    color: Color(0xFF145647),
-                    fontWeight: FontWeight.w900,
-                  ),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      '\$${product.price.toStringAsFixed(2)} c/u',
+                      style: const TextStyle(
+                        color: Color(0xFF145647),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Subtotal: \$${lineSubtotal.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      'Disponible: $stock',
+                      style: const TextStyle(color: Color(0xFF68645D)),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1490,6 +1644,52 @@ class CartProductRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class ProductThumbnail extends StatelessWidget {
+  const ProductThumbnail({required this.imageUrl, super.key});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+    if (url != null && url.isNotEmpty) {
+      return SizedBox(
+        width: 70,
+        height: 70,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          semanticLabel: 'Imagen del producto en carrito',
+          errorBuilder: (context, error, stackTrace) =>
+              const CartProductPlaceholder(),
+        ),
+      );
+    }
+
+    return const CartProductPlaceholder();
+  }
+}
+
+class CartProductPlaceholder extends StatelessWidget {
+  const CartProductPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFF5E9D8), Color(0xFFE0D4C2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Icon(Icons.spa_outlined, color: Color(0xFF145647), size: 28),
     );
   }
 }
@@ -1575,6 +1775,12 @@ class CartValidationSummary extends StatelessWidget {
           const SizedBox(height: 8),
           Text('Subtotal: \$${validation.subtotal.toStringAsFixed(2)}'),
           Text('IVA 15%: \$${validation.tax.toStringAsFixed(2)}'),
+          const Text('Descuentos: \$0.00'),
+          const Text('Envio: Por coordinar'),
+          Text(
+            'Total final: \$${validation.total.toStringAsFixed(2)}',
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
           if (validation.stockAlerts.isNotEmpty) ...[
             const SizedBox(height: 8),
             for (final alert in validation.stockAlerts)
