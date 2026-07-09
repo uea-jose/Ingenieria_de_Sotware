@@ -52,6 +52,9 @@ class _HomePageState extends State<HomePage> {
   int? _selectedCategoryId;
   int? _selectedBrandId;
   String _searchText = '';
+  final Map<int, int> _cartQuantities = {};
+  CartValidation? _cartValidation;
+  bool _cartIsValidating = false;
 
   final _slides = const [
     HeroSlide(
@@ -125,6 +128,129 @@ class _HomePageState extends State<HomePage> {
 
   final _catalogKey = GlobalKey();
 
+  int get _cartCount {
+    return _cartQuantities.values.fold(
+      0,
+      (total, quantity) => total + quantity,
+    );
+  }
+
+  Future<void> _addToCart(Product product) async {
+    final stock = product.inventory?.stock ?? 0;
+    if (stock <= 0) return;
+
+    final currentQuantity = _cartQuantities[product.id] ?? 0;
+    if (currentQuantity >= stock) {
+      _showSnackBar('${product.name} solo tiene $stock unidades disponibles.');
+      return;
+    }
+
+    setState(() {
+      _cartQuantities[product.id] = currentQuantity + 1;
+    });
+
+    _showSnackBar('${product.name} agregado al carrito.');
+    await _validateCart(showMessages: false);
+  }
+
+  Future<void> _changeCartQuantity(Product product, int nextQuantity) async {
+    final stock = product.inventory?.stock ?? 0;
+
+    setState(() {
+      if (nextQuantity <= 0) {
+        _cartQuantities.remove(product.id);
+      } else {
+        _cartQuantities[product.id] = nextQuantity.clamp(1, stock);
+      }
+    });
+
+    await _validateCart(showMessages: false);
+  }
+
+  void _clearCart() {
+    setState(() {
+      _cartQuantities.clear();
+      _cartValidation = null;
+    });
+  }
+
+  Future<void> _validateCart({bool showMessages = true}) async {
+    if (_cartQuantities.isEmpty) {
+      setState(() => _cartValidation = null);
+      return;
+    }
+
+    setState(() => _cartIsValidating = true);
+    try {
+      final validation = await ApiService.validateCart(_cartQuantities);
+      if (!mounted) return;
+      setState(() => _cartValidation = validation);
+
+      if (showMessages) {
+        _showSnackBar(
+          validation.valid
+              ? 'Carrito validado correctamente.'
+              : validation.errors.join(' '),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      if (showMessages) {
+        _showSnackBar('No se pudo validar el carrito. Verifica el backend.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _cartIsValidating = false);
+      }
+    }
+  }
+
+  void _openCartPanel(List<Product> products) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, refreshPanel) {
+            final productsById = {
+              for (final product in products) product.id: product,
+            };
+            final cartProducts = _cartQuantities.keys
+                .map((id) => productsById[id])
+                .whereType<Product>()
+                .toList();
+
+            return CartPanel(
+              products: cartProducts,
+              quantities: Map<int, int>.from(_cartQuantities),
+              validation: _cartValidation,
+              validating: _cartIsValidating,
+              onQuantityChanged: (product, quantity) async {
+                await _changeCartQuantity(product, quantity);
+                refreshPanel(() {});
+              },
+              onValidate: () async {
+                await _validateCart(showMessages: true);
+                refreshPanel(() {});
+              },
+              onClear: () {
+                _clearCart();
+                refreshPanel(() {});
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,6 +277,8 @@ class _HomePageState extends State<HomePage> {
               SliverToBoxAdapter(
                 child: TopNavigation(
                   onCatalogPressed: _scrollToCatalog,
+                  onCartPressed: () => _openCartPanel(data.products),
+                  cartCount: _cartCount,
                   onSearchChanged: (value) {
                     _searchController.text = value;
                     setState(() => _searchText = value);
@@ -169,6 +297,15 @@ class _HomePageState extends State<HomePage> {
               ),
               const SliverToBoxAdapter(child: TrustBar()),
               const SliverToBoxAdapter(child: FeaturedExperienceStrip()),
+              SliverToBoxAdapter(
+                child: CartPreviewBar(
+                  itemCount: _cartCount,
+                  validation: _cartValidation,
+                  validating: _cartIsValidating,
+                  onOpenCart: () => _openCartPanel(data.products),
+                  onValidate: () => _validateCart(showMessages: true),
+                ),
+              ),
               SliverToBoxAdapter(
                 child: CatalogSectionHeader(
                   key: _catalogKey,
@@ -202,7 +339,7 @@ class _HomePageState extends State<HomePage> {
               if (products.isEmpty)
                 const SliverToBoxAdapter(child: EmptyCatalogView())
               else
-                ProductGrid(products: products),
+                ProductGrid(products: products, onAddToCart: _addToCart),
             ],
           );
         },
@@ -233,12 +370,16 @@ class _HomePageState extends State<HomePage> {
 class TopNavigation extends StatelessWidget {
   const TopNavigation({
     required this.onCatalogPressed,
+    required this.onCartPressed,
     required this.onSearchChanged,
+    required this.cartCount,
     super.key,
   });
 
   final VoidCallback onCatalogPressed;
+  final VoidCallback onCartPressed;
   final ValueChanged<String> onSearchChanged;
+  final int cartCount;
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +411,10 @@ class TopNavigation extends StatelessWidget {
                           label: 'Promociones',
                           onPressed: onCatalogPressed,
                         ),
-                        _NavButton(label: 'Carrito', onPressed: () {}),
+                        CartNavButton(
+                          count: cartCount,
+                          onPressed: onCartPressed,
+                        ),
                         OutlinedButton.icon(
                           onPressed: () {},
                           icon: const Icon(Icons.person_outline),
@@ -459,6 +603,30 @@ class _NavButton extends StatelessWidget {
           fontWeight: FontWeight.w800,
         ),
       ),
+    );
+  }
+}
+
+class CartNavButton extends StatelessWidget {
+  const CartNavButton({
+    required this.count,
+    required this.onPressed,
+    super.key,
+  });
+
+  final int count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Badge(
+        isLabelVisible: count > 0,
+        label: Text('$count'),
+        child: const Icon(Icons.shopping_bag_outlined),
+      ),
+      label: const Text('Carrito'),
     );
   }
 }
@@ -983,6 +1151,475 @@ class _ExperienceCard extends StatelessWidget {
   }
 }
 
+class CartPreviewBar extends StatelessWidget {
+  const CartPreviewBar({
+    required this.itemCount,
+    required this.validation,
+    required this.validating,
+    required this.onOpenCart,
+    required this.onValidate,
+    super.key,
+  });
+
+  final int itemCount;
+  final CartValidation? validation;
+  final bool validating;
+  final VoidCallback onOpenCart;
+  final Future<void> Function() onValidate;
+
+  @override
+  Widget build(BuildContext context) {
+    if (itemCount == 0) return const SizedBox.shrink();
+
+    final total = validation?.total;
+    final valid = validation?.valid;
+
+    return Container(
+      color: const Color(0xFFFAF8F4),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1280),
+          child: Card(
+            elevation: 0,
+            color: const Color(0xFF102F29),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Wrap(
+                spacing: 14,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                alignment: WrapAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.shopping_bag_outlined,
+                        color: Color(0xFFE8C766),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '$itemCount producto${itemCount == 1 ? '' : 's'} en el carrito',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (total != null) ...[
+                        const SizedBox(width: 12),
+                        Text(
+                          'Total: \$${total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Color(0xFFE8C766),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                      if (valid != null) ...[
+                        const SizedBox(width: 12),
+                        Icon(
+                          valid
+                              ? Icons.check_circle_outline
+                              : Icons.warning_amber_rounded,
+                          color: valid
+                              ? const Color(0xFF9FE7BD)
+                              : const Color(0xFFFFD66B),
+                          size: 20,
+                        ),
+                      ],
+                    ],
+                  ),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: validating ? null : () => onValidate(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white),
+                        ),
+                        icon: validating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.verified_outlined),
+                        label: Text(validating ? 'Validando' : 'Validar'),
+                      ),
+                      FilledButton.icon(
+                        onPressed: onOpenCart,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFE8C766),
+                          foregroundColor: const Color(0xFF102F29),
+                        ),
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('Ver carrito'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CartPanel extends StatelessWidget {
+  const CartPanel({
+    required this.products,
+    required this.quantities,
+    required this.validation,
+    required this.validating,
+    required this.onQuantityChanged,
+    required this.onValidate,
+    required this.onClear,
+    super.key,
+  });
+
+  final List<Product> products;
+  final Map<int, int> quantities;
+  final CartValidation? validation;
+  final bool validating;
+  final Future<void> Function(Product product, int quantity) onQuantityChanged;
+  final Future<void> Function() onValidate;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = validation?.total ?? _localTotal;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.42,
+      maxChildSize: 0.92,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+            children: [
+              Center(
+                child: Container(
+                  width: 54,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD8D2C8),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Carrito de compras',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF111111),
+                          ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Cerrar carrito',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Revisa cantidades, disponibilidad y total antes de continuar.',
+                style: TextStyle(color: Color(0xFF68645D)),
+              ),
+              const SizedBox(height: 18),
+              if (products.isEmpty)
+                const _EmptyCartMessage()
+              else ...[
+                for (final product in products) ...[
+                  CartProductRow(
+                    product: product,
+                    quantity: quantities[product.id] ?? 0,
+                    onQuantityChanged: (value) =>
+                        onQuantityChanged(product, value),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                const Divider(height: 28),
+                if (validation != null)
+                  CartValidationSummary(validation: validation!),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Total estimado',
+                        style: TextStyle(
+                          color: Color(0xFF68645D),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '\$${total.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF145647),
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: onClear,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Vaciar carrito'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: validating ? null : () => onValidate(),
+                      icon: validating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.verified_outlined),
+                      label: Text(validating ? 'Validando' : 'Validar carrito'),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  double get _localTotal {
+    return products.fold(0, (total, product) {
+      final quantity = quantities[product.id] ?? 0;
+      return total + (product.price * quantity);
+    });
+  }
+}
+
+class CartProductRow extends StatelessWidget {
+  const CartProductRow({
+    required this.product,
+    required this.quantity,
+    required this.onQuantityChanged,
+    super.key,
+  });
+
+  final Product product;
+  final int quantity;
+  final ValueChanged<int> onQuantityChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final stock = product.inventory?.stock ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAF8F4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8E0D5)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(width: 70, height: 70, child: ProductPlaceholder()),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${product.brand.name} · Stock $stock',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Color(0xFF68645D)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '\$${product.price.toStringAsFixed(2)} c/u',
+                  style: const TextStyle(
+                    color: Color(0xFF145647),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          QuantityStepper(
+            quantity: quantity,
+            maxQuantity: stock,
+            onChanged: onQuantityChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class QuantityStepper extends StatelessWidget {
+  const QuantityStepper({
+    required this.quantity,
+    required this.maxQuantity,
+    required this.onChanged,
+    super.key,
+  });
+
+  final int quantity;
+  final int maxQuantity;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton.outlined(
+          tooltip: 'Quitar unidad',
+          onPressed: () => onChanged(quantity - 1),
+          icon: const Icon(Icons.remove),
+        ),
+        SizedBox(
+          width: 38,
+          child: Text(
+            '$quantity',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+        ),
+        IconButton.outlined(
+          tooltip: 'Agregar unidad',
+          onPressed: quantity >= maxQuantity
+              ? null
+              : () => onChanged(quantity + 1),
+          icon: const Icon(Icons.add),
+        ),
+      ],
+    );
+  }
+}
+
+class CartValidationSummary extends StatelessWidget {
+  const CartValidationSummary({required this.validation, super.key});
+
+  final CartValidation validation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: validation.valid
+            ? const Color(0xFFEAF5EF)
+            : const Color(0xFFFFF6DB),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                validation.valid
+                    ? Icons.check_circle_outline
+                    : Icons.warning_amber_rounded,
+                color: validation.valid
+                    ? const Color(0xFF145647)
+                    : const Color(0xFF684900),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                validation.valid ? 'Carrito valido' : 'Revisar carrito',
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Subtotal: \$${validation.subtotal.toStringAsFixed(2)}'),
+          Text('IVA 15%: \$${validation.tax.toStringAsFixed(2)}'),
+          if (validation.stockAlerts.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final alert in validation.stockAlerts)
+              Text(
+                'Alerta: $alert',
+                style: const TextStyle(color: Color(0xFF684900)),
+              ),
+          ],
+          if (validation.errors.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final error in validation.errors)
+              Text(
+                'Error: $error',
+                style: const TextStyle(color: Color(0xFF8A1C1C)),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyCartMessage extends StatelessWidget {
+  const _EmptyCartMessage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 28),
+      child: Column(
+        children: [
+          Icon(Icons.shopping_bag_outlined, size: 52, color: Color(0xFF68645D)),
+          SizedBox(height: 12),
+          Text(
+            'Tu carrito esta vacio.',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+          ),
+          SizedBox(height: 6),
+          Text('Agrega productos desde el catalogo publico.'),
+        ],
+      ),
+    );
+  }
+}
+
 class CatalogSectionHeader extends StatelessWidget {
   const CatalogSectionHeader({
     required this.visibleProducts,
@@ -1185,9 +1822,14 @@ class CatalogFilters extends StatelessWidget {
 }
 
 class ProductGrid extends StatelessWidget {
-  const ProductGrid({required this.products, super.key});
+  const ProductGrid({
+    required this.products,
+    required this.onAddToCart,
+    super.key,
+  });
 
   final List<Product> products;
+  final ValueChanged<Product> onAddToCart;
 
   @override
   Widget build(BuildContext context) {
@@ -1206,7 +1848,10 @@ class ProductGrid extends StatelessWidget {
 
           return SliverGrid(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => ProductCard(product: products[index]),
+              (context, index) => ProductCard(
+                product: products[index],
+                onAddToCart: onAddToCart,
+              ),
               childCount: products.length,
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -1223,9 +1868,14 @@ class ProductGrid extends StatelessWidget {
 }
 
 class ProductCard extends StatefulWidget {
-  const ProductCard({required this.product, super.key});
+  const ProductCard({
+    required this.product,
+    required this.onAddToCart,
+    super.key,
+  });
 
   final Product product;
+  final ValueChanged<Product> onAddToCart;
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -1391,7 +2041,7 @@ class _ProductCardState extends State<ProductCard> {
                           width: double.infinity,
                           child: FilledButton.icon(
                             onPressed: hasStock
-                                ? () => _showCartMessage(context, product)
+                                ? () => widget.onAddToCart(product)
                                 : null,
                             icon: const Icon(Icons.add_shopping_cart),
                             label: Text(
@@ -1407,15 +2057,6 @@ class _ProductCardState extends State<ProductCard> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showCartMessage(BuildContext context, Product product) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} agregado al carrito.'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -1891,8 +2532,33 @@ class ApiService {
     );
   }
 
+  static Future<CartValidation> validateCart(Map<int, int> quantities) async {
+    final items = quantities.entries
+        .map((entry) => {'productoId': entry.key, 'cantidad': entry.value})
+        .toList();
+    final json = await _postJson('$apiBaseUrl/carrito/validar', {
+      'items': items,
+    });
+    return CartValidation.fromJson(json);
+  }
+
   static Future<Map<String, dynamic>> _getJson(String url) async {
     final response = await http.get(Uri.parse(url));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> _postJson(
+    String url,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
     }
@@ -1921,6 +2587,54 @@ class CatalogData {
 
   factory CatalogData.empty() {
     return const CatalogData(products: [], categories: [], brands: []);
+  }
+}
+
+class CartValidation {
+  const CartValidation({
+    required this.valid,
+    required this.subtotal,
+    required this.tax,
+    required this.total,
+    required this.taxPercent,
+    required this.stockAlerts,
+    required this.errors,
+  });
+
+  final bool valid;
+  final double subtotal;
+  final double tax;
+  final double total;
+  final double taxPercent;
+  final List<String> stockAlerts;
+  final List<String> errors;
+
+  factory CartValidation.fromJson(Map<String, dynamic> json) {
+    final alerts = json['alertasStock'];
+    final errors = json['errores'];
+
+    return CartValidation(
+      valid: json['valido'] == true,
+      subtotal: _asDouble(json['subtotal']),
+      tax: _asDouble(json['impuesto']),
+      total: _asDouble(json['total']),
+      taxPercent: _asDouble(json['porcentajeImpuesto']),
+      stockAlerts: alerts is List
+          ? alerts
+                .map((alert) {
+                  if (alert is Map) return _asString(alert['mensaje']);
+                  return _asString(alert);
+                })
+                .where((message) => message.isNotEmpty)
+                .toList()
+          : const [],
+      errors: errors is List
+          ? errors
+                .map(_asString)
+                .where((message) => message.isNotEmpty)
+                .toList()
+          : const [],
+    );
   }
 }
 
