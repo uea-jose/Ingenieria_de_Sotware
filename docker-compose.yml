@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aromas-store-postgres
+    environment:
+      POSTGRES_DB: aromas_store
+      POSTGRES_USER: aromas_user
+      POSTGRES_PASSWORD: aromas_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - aromas_store_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  aromas_store_postgres_data:
+

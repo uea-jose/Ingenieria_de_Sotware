@@ -1,0 +1,41 @@
+# Environment and secrets
+.env
+*.env
+
+# Node backend
+backend/node_modules/
+backend/.npm-cache/
+backend/generated/prisma/
+
+# Flutter frontend
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins-dependencies
+frontend/.pub-cache/
+frontend/.pub/
+frontend/android/
+frontend/ios/
+frontend/linux/
+frontend/macos/
+frontend/windows/
+frontend/.idea/
+frontend/*.iml
+frontend/.github/
+
+# Local logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+
+# Local media/reference files
+videosPront/
+*.mp4
+*.zip
+BAKEND_ARBOL.TXT
+
+# Editor/system files
+.DS_Store
+Thumbs.db
+.idea/
+backend/.github/
