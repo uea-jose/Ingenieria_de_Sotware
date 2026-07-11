@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class ProductStatusBadge extends StatelessWidget {
   const ProductStatusBadge({
     required this.text,
@@ -16,11 +18,11 @@ class ProductStatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: warning
-            ? const Color(0xFFFFF1C2)
-            : Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(999),
+            ? AppColors.bgPeach
+            : AppColors.surface.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
         border: Border.all(
-          color: warning ? const Color(0xFFE4B635) : const Color(0xFFE5DED2),
+          color: warning ? AppColors.warning : AppColors.borderSoft,
         ),
       ),
       child: Row(
@@ -29,15 +31,13 @@ class ProductStatusBadge extends StatelessWidget {
           Icon(
             warning ? Icons.warning_amber_rounded : Icons.check_circle_outline,
             size: 16,
-            color: warning ? const Color(0xFF684900) : const Color(0xFF145647),
+            color: warning ? AppColors.warning : AppColors.success,
           ),
           const SizedBox(width: 6),
           Text(
             text,
             style: TextStyle(
-              color: warning
-                  ? const Color(0xFF684900)
-                  : const Color(0xFF145647),
+              color: warning ? AppColors.textPrimary : AppColors.success,
               fontWeight: FontWeight.w900,
               fontSize: 12,
             ),
@@ -67,16 +67,16 @@ class StockBadge extends StatelessWidget {
     final String text;
 
     if (!hasStock) {
-      background = const Color(0xFFFFE6E6);
-      foreground = const Color(0xFF8A1C1C);
+      background = const Color(0xFFFFE8EC);
+      foreground = AppColors.error;
       text = 'Agotado';
     } else if (stockLow) {
-      background = const Color(0xFFFFF1C2);
-      foreground = const Color(0xFF684900);
+      background = AppColors.bgPeach;
+      foreground = AppColors.textPrimary;
       text = 'Stock bajo: $stock';
     } else {
-      background = const Color(0xFFE4F4EA);
-      foreground = const Color(0xFF145647);
+      background = AppColors.bgMint;
+      foreground = AppColors.success;
       text = 'Stock: $stock';
     }
 
@@ -86,7 +86,7 @@ class StockBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
         ),
         child: Text(
           text,

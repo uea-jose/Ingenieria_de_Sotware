@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/product.dart';
 import 'product_thumbnail.dart';
 import 'quantity_stepper.dart';
@@ -24,9 +25,9 @@ class CartProductRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF8F4),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E0D5)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Row(
         children: [
@@ -50,7 +51,7 @@ class CartProductRow extends StatelessWidget {
                   '${product.brand.name} Ã‚Â· ${product.category.name}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Color(0xFF68645D)),
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 6),
                 Wrap(
@@ -60,7 +61,7 @@ class CartProductRow extends StatelessWidget {
                     Text(
                       '\$${product.price.toStringAsFixed(2)} c/u',
                       style: const TextStyle(
-                        color: Color(0xFF145647),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -70,7 +71,7 @@ class CartProductRow extends StatelessWidget {
                     ),
                     Text(
                       'Disponible: $stock',
-                      style: const TextStyle(color: Color(0xFF68645D)),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),

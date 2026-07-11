@@ -1,11 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../data/api/api_service.dart';
 import '../../data/storage/cart_storage.dart';
+import '../../models/brand.dart';
 import '../../models/cart_validation.dart';
 import '../../models/catalog_data.dart';
+import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../widgets/catalog/catalog_filters.dart';
 import '../../widgets/catalog/catalog_section_header.dart';
@@ -16,6 +20,9 @@ import '../../widgets/cart/cart_preview_bar.dart';
 import '../../widgets/feedback/error_view.dart';
 import '../../widgets/feedback/loading_view.dart';
 import '../../widgets/layout/top_navigation.dart';
+import 'demo_home_catalog.dart';
+import 'home_commercial_sections.dart';
+import 'home_search_box.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,12 +34,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late Future<CatalogData> _catalogFuture;
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   final _heroController = PageController();
   Timer? _heroTimer;
+  Timer? _searchDebounce;
   int _heroIndex = 0;
+  int _highlightedSuggestion = 0;
   int? _selectedCategoryId;
   int? _selectedBrandId;
   String _searchText = '';
+  List<String> _suggestionTerms = const [];
+  List<Product> _searchSuggestions = const [];
+  List<Product> _currentProductsForSearch = const [];
   final Map<int, int> _cartQuantities = {};
   CartValidation? _cartValidation;
   bool _cartIsValidating = false;
@@ -45,8 +58,8 @@ class _HomePageState extends State<HomePage> {
           'Explora perfumes, esencias y productos aromaticos con disponibilidad clara y compra sencilla.',
       offer: 'Catalogo publico',
       buttonText: 'Ver productos',
-      colors: [Color(0xFFF2D3AE), Color(0xFF113D35)],
-      accentColor: Color(0xFFF0B84F),
+      colors: [AppColors.bgSoftPink, AppColors.bgLavender, AppColors.bgBlue],
+      accentColor: AppColors.primary,
     ),
     HeroSlide(
       eyebrow: 'Promociones vigentes',
@@ -55,8 +68,8 @@ class _HomePageState extends State<HomePage> {
           'Encuentra productos con descuentos, stock visible y categorias faciles de explorar.',
       offer: 'Ofertas destacadas',
       buttonText: 'Explorar promociones',
-      colors: [Color(0xFFE8E1D5), Color(0xFF2B1F30)],
-      accentColor: Color(0xFF9FB61D),
+      colors: [AppColors.bgPeach, AppColors.bgSoftPink, AppColors.bgLavender],
+      accentColor: AppColors.accentPeach,
     ),
     HeroSlide(
       eyebrow: 'Compra segura',
@@ -65,8 +78,8 @@ class _HomePageState extends State<HomePage> {
           'Diseno centrado en el usuario: menos friccion, mejor lectura y acciones predecibles.',
       offer: 'Experiencia simple',
       buttonText: 'Comenzar',
-      colors: [Color(0xFFDDE7E0), Color(0xFF0D2F4C)],
-      accentColor: Color(0xFFE9C766),
+      colors: [AppColors.bgMint, AppColors.bgBlue, AppColors.bgLavender],
+      accentColor: AppColors.accentMint,
     ),
   ];
 
@@ -81,6 +94,7 @@ class _HomePageState extends State<HomePage> {
       }
     });
     _heroTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_searchFocusNode.hasFocus) return;
       if (!mounted || !_heroController.hasClients) return;
       final next = (_heroIndex + 1) % _slides.length;
       _heroController.animateToPage(
@@ -94,6 +108,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _heroTimer?.cancel();
+    _searchDebounce?.cancel();
+    _searchFocusNode.dispose();
     _heroController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -106,8 +122,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _scrollToCatalog() {
+    final context = _catalogKey.currentContext;
+    if (context == null) return;
     Scrollable.ensureVisible(
-      _catalogKey.currentContext!,
+      context,
       duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
     );
@@ -332,6 +350,203 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  CatalogData _catalogForDisplay(CatalogData data) {
+    final demo = buildDemoCatalog();
+    if (data.products.isEmpty) return demo;
+
+    if (data.products.length >= 8) return data;
+
+    return CatalogData(
+      products: _mergeProducts(data.products, demo.products),
+      categories: _mergeCategories(data.categories, demo.categories),
+      brands: _mergeBrands(data.brands, demo.brands),
+    );
+  }
+
+  List<Product> _mergeProducts(List<Product> real, List<Product> demo) {
+    final ids = real.map((product) => product.id).toSet();
+    return [...real, ...demo.where((product) => !ids.contains(product.id))];
+  }
+
+  List<Category> _mergeCategories(List<Category> real, List<Category> demo) {
+    final ids = real.map((category) => category.id).toSet();
+    return [...real, ...demo.where((category) => !ids.contains(category.id))];
+  }
+
+  List<Brand> _mergeBrands(List<Brand> real, List<Brand> demo) {
+    final ids = real.map((brand) => brand.id).toSet();
+    return [...real, ...demo.where((brand) => !ids.contains(brand.id))];
+  }
+
+  void _handleSearchChanged(String value, List<Product> products) {
+    _searchDebounce?.cancel();
+    setState(() => _searchText = value);
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      setState(() {
+        _searchSuggestions = _findSuggestions(value, products);
+        _suggestionTerms = _findSuggestionTerms(value, products);
+        _highlightedSuggestion = 0;
+      });
+    });
+  }
+
+  List<Product> _findSuggestions(String value, List<Product> products) {
+    final query = value.trim().toLowerCase();
+    if (query.isEmpty) return const [];
+
+    return products
+        .where((product) {
+          final text = [
+            product.name,
+            product.brand.name,
+            product.category.name,
+            product.description,
+            product.code,
+          ].join(' ').toLowerCase();
+          return product.active && text.contains(query);
+        })
+        .take(6)
+        .toList();
+  }
+
+  List<String> _findSuggestionTerms(String value, List<Product> products) {
+    final query = value.trim().toLowerCase();
+    if (query.isEmpty) return const [];
+
+    final terms = <String>{
+      for (final product in products) ...[
+        product.brand.name,
+        product.category.name,
+        product.name,
+        if (product.description.toLowerCase().contains('hombre'))
+          'Perfumes para hombre',
+        if (product.description.toLowerCase().contains('mujer'))
+          'Perfumes para mujer',
+        if (product.description.toLowerCase().contains('unisex'))
+          'Perfumes unisex',
+      ],
+      'Perfumes',
+      'Sets y regalos',
+    }.where((term) => term.trim().isNotEmpty).toList();
+
+    terms.sort((a, b) {
+      final aStarts = a.toLowerCase().startsWith(query);
+      final bStarts = b.toLowerCase().startsWith(query);
+      if (aStarts != bStarts) return aStarts ? -1 : 1;
+      return a.length.compareTo(b.length);
+    });
+
+    return terms
+        .where((term) => term.toLowerCase().contains(query))
+        .take(10)
+        .toList();
+  }
+
+  KeyEventResult _handleSearchKeys(KeyEvent event) {
+    if (event is! KeyDownEvent || _searchText.trim().isEmpty) {
+      return KeyEventResult.ignored;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      _searchFocusNode.unfocus();
+      setState(() {
+        _searchSuggestions = const [];
+        _suggestionTerms = const [];
+      });
+      return KeyEventResult.handled;
+    }
+
+    if (_searchSuggestions.isEmpty) return KeyEventResult.ignored;
+
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      setState(() {
+        _highlightedSuggestion =
+            (_highlightedSuggestion + 1) % _searchSuggestions.length;
+      });
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      setState(() {
+        _highlightedSuggestion =
+            (_highlightedSuggestion - 1 + _searchSuggestions.length) %
+            _searchSuggestions.length;
+      });
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.enter) {
+      _selectSuggestion(_searchSuggestions[_highlightedSuggestion]);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _selectSuggestion(Product product) {
+    _searchController.value = TextEditingValue(
+      text: product.name,
+      selection: TextSelection.collapsed(offset: product.name.length),
+    );
+    setState(() {
+      _searchText = product.name;
+      _searchSuggestions = const [];
+      _suggestionTerms = const [];
+    });
+    _searchFocusNode.unfocus();
+    _scrollToCatalog();
+    _showSnackBar('${product.name} seleccionado en la portada.');
+  }
+
+  void _selectSuggestionTerm(String term) {
+    _searchController.value = TextEditingValue(
+      text: term,
+      selection: TextSelection.collapsed(offset: term.length),
+    );
+    setState(() {
+      _searchText = term;
+      _searchSuggestions = _findSuggestions(term, _currentProductsForSearch);
+      _suggestionTerms = _findSuggestionTerms(term, _currentProductsForSearch);
+      _highlightedSuggestion = 0;
+    });
+    _searchFocusNode.requestFocus();
+  }
+
+  void _closeSearchPanel() {
+    _searchFocusNode.unfocus();
+    setState(() {
+      _searchSuggestions = const [];
+      _suggestionTerms = const [];
+      _highlightedSuggestion = 0;
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchText = '';
+      _searchSuggestions = const [];
+      _suggestionTerms = const [];
+      _highlightedSuggestion = 0;
+    });
+  }
+
+  void _applyLocalShortcut(String value) {
+    _searchController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+    setState(() {
+      _searchText = value;
+      _searchSuggestions = const [];
+      _suggestionTerms = const [];
+      _selectedCategoryId = null;
+      _selectedBrandId = null;
+    });
+    _scrollToCatalog();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -342,16 +557,14 @@ class _HomePageState extends State<HomePage> {
             return const LoadingView();
           }
 
-          if (snapshot.hasError) {
-            return ErrorView(
-              message: 'No se pudo cargar Aromas Store.',
-              details: snapshot.error.toString(),
-              onRetry: _reloadCatalog,
-            );
-          }
-
-          final data = snapshot.data ?? CatalogData.empty();
+          final hasBackendError = snapshot.hasError;
+          final data = _catalogForDisplay(snapshot.data ?? CatalogData.empty());
+          _currentProductsForSearch = data.products;
           final products = _applyFilters(data.products);
+          final featuredProducts = data.products.take(4).toList();
+          final bestSellers = data.products.skip(4).take(4).isEmpty
+              ? featuredProducts
+              : data.products.skip(4).take(4).toList();
 
           return CustomScrollView(
             slivers: [
@@ -360,13 +573,48 @@ class _HomePageState extends State<HomePage> {
                   onCatalogPressed: _scrollToCatalog,
                   onCartPressed: () => _openCartPanel(data.products),
                   cartCount: _cartCount,
-                  onSearchChanged: (value) {
-                    _searchController.text = value;
-                    setState(() => _searchText = value);
-                    _scrollToCatalog();
-                  },
+                  searchBox: HomeSearchBox(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    query: _searchText,
+                    suggestionTerms: _suggestionTerms,
+                    suggestions: _searchSuggestions,
+                    highlightedIndex: _highlightedSuggestion,
+                    onChanged: (value) =>
+                        _handleSearchChanged(value, data.products),
+                    onClear: _clearSearch,
+                    onClose: _closeSearchPanel,
+                    onSubmitted: (_) => _scrollToCatalog(),
+                    onTermSelected: _selectSuggestionTerm,
+                    onSuggestionSelected: _selectSuggestion,
+                    onViewAll: _scrollToCatalog,
+                    onQuickView: (product) {
+                      _selectSuggestion(product);
+                      _showSnackBar(
+                        'Vista rapida de ${product.name} preparada para el siguiente modulo.',
+                      );
+                    },
+                    onKeyboardNavigation: _handleSearchKeys,
+                  ),
                 ),
               ),
+              if (hasBackendError)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1280),
+                        child: ErrorView(
+                          message: 'Mostrando catalogo de demostracion.',
+                          details:
+                              'El backend no respondio. La portada usa productos simulados locales.',
+                          onRetry: _reloadCatalog,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               SliverToBoxAdapter(
                 child: HeroCarousel(
                   controller: _heroController,
@@ -377,7 +625,42 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: TrustBar()),
-              const SliverToBoxAdapter(child: FeaturedExperienceStrip()),
+              SliverToBoxAdapter(
+                child: CategoryShortcuts(onSelected: _applyLocalShortcut),
+              ),
+              SliverToBoxAdapter(
+                child: ProductShowcaseSection(
+                  title: 'Productos destacados',
+                  subtitle:
+                      'Perfumes de muestra y catalogo real en una misma experiencia.',
+                  products: featuredProducts,
+                  onAddToCart: _addToCart,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: PromoBannerSection(
+                  onPressed: () => _applyLocalShortcut('Oferta'),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: ProductShowcaseSection(
+                  title: 'Mas vendidos',
+                  subtitle:
+                      'Opciones populares para comparar rapido sin salir de la portada.',
+                  products: bestSellers,
+                  onAddToCart: _addToCart,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: BrandShowcaseSection(
+                  brands: data.brands,
+                  onTap: _applyLocalShortcut,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: OccasionSection(onTap: _applyLocalShortcut),
+              ),
+              const SliverToBoxAdapter(child: BenefitsSection()),
               SliverToBoxAdapter(
                 child: CartPreviewBar(
                   itemCount: _cartCount,
@@ -421,6 +704,9 @@ class _HomePageState extends State<HomePage> {
                 const SliverToBoxAdapter(child: EmptyCatalogView())
               else
                 ProductGrid(products: products, onAddToCart: _addToCart),
+              SliverToBoxAdapter(
+                child: HomeFooter(onExplore: _scrollToCatalog),
+              ),
             ],
           );
         },
@@ -436,7 +722,9 @@ class _HomePageState extends State<HomePage> {
           query.isEmpty ||
           product.name.toLowerCase().contains(query) ||
           product.brand.name.toLowerCase().contains(query) ||
-          product.category.name.toLowerCase().contains(query);
+          product.category.name.toLowerCase().contains(query) ||
+          product.description.toLowerCase().contains(query) ||
+          product.code.toLowerCase().contains(query);
       final matchesCategory =
           _selectedCategoryId == null ||
           product.categoryId == _selectedCategoryId;
@@ -447,6 +735,7 @@ class _HomePageState extends State<HomePage> {
     }).toList();
   }
 }
+
 class HeroCarousel extends StatelessWidget {
   const HeroCarousel({
     required this.controller,
@@ -466,7 +755,7 @@ class HeroCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.bgPage,
       child: Column(
         children: [
           SizedBox(
@@ -495,8 +784,8 @@ class HeroCarousel extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 5),
                   decoration: BoxDecoration(
                     color: i == currentIndex
-                        ? const Color(0xFF145647)
-                        : const Color(0xFFD8D8D8),
+                        ? AppColors.primary
+                        : AppColors.borderSoft,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -582,7 +871,7 @@ class HeroSlideView extends StatelessWidget {
                             slide.title,
                             style: Theme.of(context).textTheme.displayMedium
                                 ?.copyWith(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w900,
                                   height: 1.02,
                                 ),
@@ -591,7 +880,10 @@ class HeroSlideView extends StatelessWidget {
                           Text(
                             slide.description,
                             style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(color: Colors.white, height: 1.35),
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  height: 1.35,
+                                ),
                           ),
                           const SizedBox(height: 24),
                           Wrap(
@@ -603,7 +895,7 @@ class HeroSlideView extends StatelessWidget {
                                 onPressed: onPressed,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: slide.accentColor,
-                                  foregroundColor: const Color(0xFF111111),
+                                  foregroundColor: AppColors.surface,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 18,
@@ -614,7 +906,7 @@ class HeroSlideView extends StatelessWidget {
                               Text(
                                 slide.offer,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -655,7 +947,7 @@ class HeroProductMock extends StatelessWidget {
           width: 320,
           height: 320,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.16),
+            color: AppColors.surface.withValues(alpha: 0.54),
             shape: BoxShape.circle,
           ),
         ),
@@ -665,15 +957,9 @@ class HeroProductMock extends StatelessWidget {
             width: 155,
             height: 285,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(34),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 34,
-                  offset: const Offset(0, 20),
-                ),
-              ],
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadii.block),
+              boxShadow: AppShadows.hover,
             ),
             child: Column(
               children: [
@@ -689,14 +975,14 @@ class HeroProductMock extends StatelessWidget {
                 const SizedBox(height: 38),
                 const Icon(
                   Icons.spa_outlined,
-                  color: Color(0xFF145647),
+                  color: AppColors.primary,
                   size: 44,
                 ),
                 const SizedBox(height: 22),
                 const Text(
                   'AROMAS',
                   style: TextStyle(
-                    color: Color(0xFF111111),
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.4,
                   ),
@@ -704,7 +990,7 @@ class HeroProductMock extends StatelessWidget {
                 const Text(
                   'STORE',
                   style: TextStyle(
-                    color: Color(0xFF777777),
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -735,7 +1021,7 @@ class TrustBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF0F0F0),
+      color: AppColors.bgLavender,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
       child: Center(
         child: ConstrainedBox(
@@ -805,7 +1091,7 @@ class TrustItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: const Color(0xFF145647)),
+        Icon(icon, color: AppColors.primary),
         const SizedBox(width: 10),
         Flexible(
           child: Column(
@@ -821,7 +1107,7 @@ class TrustItem extends StatelessWidget {
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Color(0xFF555555)),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -860,7 +1146,7 @@ class FeaturedExperienceStrip extends StatelessWidget {
     ];
 
     return Container(
-      color: const Color(0xFFFAF8F4),
+      color: AppColors.bgPage,
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 6),
       child: Center(
         child: ConstrainedBox(
@@ -909,16 +1195,10 @@ class _ExperienceCard extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 108),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE8E0D5)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          border: Border.all(color: AppColors.borderSoft),
+          boxShadow: AppShadows.base,
         ),
         child: Row(
           children: [
@@ -926,10 +1206,10 @@ class _ExperienceCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF5EF),
-                borderRadius: BorderRadius.circular(14),
+                color: AppColors.bgMint,
+                borderRadius: BorderRadius.circular(AppRadii.search),
               ),
-              child: Icon(icon, color: const Color(0xFF145647)),
+              child: Icon(icon, color: AppColors.primary),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -943,7 +1223,7 @@ class _ExperienceCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF111111),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -953,7 +1233,7 @@ class _ExperienceCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       height: 1.25,
-                      color: Color(0xFF68645D),
+                      color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                   ),

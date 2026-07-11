@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key});
 
@@ -12,12 +14,13 @@ class BrandMark extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFFE8C766),
-            borderRadius: BorderRadius.circular(14),
+            color: AppColors.bgSoftPink,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            boxShadow: AppShadows.base,
           ),
           child: const Icon(
             Icons.spa_outlined,
-            color: Color(0xFF143B33),
+            color: AppColors.primary,
             size: 28,
           ),
         ),
@@ -29,13 +32,13 @@ class BrandMark extends StatelessWidget {
               'Aromas Store',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: const Color(0xFF111111),
+                color: AppColors.textPrimary,
               ),
             ),
             Text(
               'Fragancias y bienestar',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF575757),
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),

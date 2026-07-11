@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class ProductThumbnail extends StatelessWidget {
   const ProductThumbnail({required this.imageUrl, super.key});
 
@@ -36,12 +38,12 @@ class CartProductPlaceholder extends StatelessWidget {
       height: 70,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFF5E9D8), Color(0xFFE0D4C2)],
+          colors: [AppColors.bgSoftPink, AppColors.bgLavender],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: const Icon(Icons.spa_outlined, color: Color(0xFF145647), size: 28),
+      child: const Icon(Icons.spa_outlined, color: AppColors.primary, size: 28),
     );
   }
 }

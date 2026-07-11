@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class ProductImage extends StatelessWidget {
   const ProductImage({required this.imageUrl, super.key});
 
@@ -39,7 +41,7 @@ class ProductPlaceholder extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFF5E9D8), Color(0xFFE0D4C2)],
+          colors: [AppColors.bgSoftPink, AppColors.bgLavender],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -50,18 +52,12 @@ class ProductPlaceholder extends StatelessWidget {
           height: 138,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 14),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(AppRadii.block),
+            boxShadow: AppShadows.base,
           ),
           child: const Icon(
             Icons.spa_outlined,
-            color: Color(0xFF145647),
+            color: AppColors.primary,
             size: 42,
           ),
         ),

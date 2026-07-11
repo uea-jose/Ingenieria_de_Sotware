@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class EmptyCatalogView extends StatelessWidget {
   const EmptyCatalogView({super.key});
 
@@ -15,7 +17,7 @@ class EmptyCatalogView extends StatelessWidget {
               Icon(
                 Icons.search_off_outlined,
                 size: 52,
-                color: Color(0xFF6D6A62),
+                color: AppColors.textSecondary,
               ),
               SizedBox(height: 12),
               Text(

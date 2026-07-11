@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class CartNavButton extends StatelessWidget {
   const CartNavButton({
     required this.count,
@@ -16,6 +18,8 @@ class CartNavButton extends StatelessWidget {
       onPressed: onPressed,
       icon: Badge(
         isLabelVisible: count > 0,
+        backgroundColor: AppColors.primary,
+        textColor: AppColors.surface,
         label: Text('$count'),
         child: const Icon(Icons.shopping_bag_outlined),
       ),

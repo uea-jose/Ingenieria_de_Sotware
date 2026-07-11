@@ -443,3 +443,88 @@ Siguiente fase posible, solo con aprobacion:
 - Crear nuevas pantallas por rol.
 
 Hasta este punto no se han agregado nuevas funcionalidades.
+
+## 15. Evolucion Visual Controlada De HomePage
+
+### 2026-07-11 - AS-052
+
+Se inicio una fase distinta a la refactorizacion: mejora visual y comercial de la portada publica existente.
+
+Alcance aplicado:
+
+- Se mantuvo `HomePage` como unica pantalla publica.
+- Se mantuvieron `ApiService`, `CartStorage`, `ProductGrid`, `ProductCard`, `CartPanel`, filtros y validacion de carrito.
+- Se mejoro `TopNavigation` para incluir navegacion comercial: Inicio, Perfumes, Mujer, Hombre, Unisex, Marcas y Promociones.
+- Se agrego un buscador visual con sugerencias locales, debounce y navegacion basica por teclado.
+- Se agrego un fallback local de productos de demostracion para mostrar Paco Rabanne, Armani, Dior, Chanel, Versace y Carolina Herrera cuando el catalogo real sea insuficiente o el backend no responda.
+- Se agregaron secciones de portada: categorias, productos destacados, promocion, mas vendidos, marcas, ocasiones, beneficios y footer.
+- Se excluyo `frontend/backups/` del analisis porque contiene respaldo historico, no codigo activo.
+
+Limites respetados:
+
+- No se implemento login real.
+- No se implemento checkout real.
+- No se implementaron pagos, pedidos, facturacion ni panel administrativo.
+- No se crearon endpoints.
+- No se agregaron dependencias nuevas.
+- No se agregaron assets externos ni imagenes remotas; se reutilizo el placeholder visual existente.
+
+Validacion:
+
+| Validacion | Estado | Observacion |
+|---|---|---|
+| `dart analyze` | Correcta | Sin errores ni avisos despues de excluir respaldos. |
+| `git diff --check` | Correcta | Sin errores de espacios. |
+| `flutter test` | Pendiente tecnico | El comando no finalizo por bloqueo/procesos Flutter/Dart activos. |
+
+### 2026-07-11 - AS-053
+
+Se refino unicamente el buscador predictivo de la HomePage.
+
+Cambios aplicados:
+
+- El panel dejo de ser una lista vertical larga.
+- Se dividio en dos zonas:
+  - Izquierda: sugerencias relacionadas.
+  - Derecha: productos visuales encontrados.
+- Los productos se muestran como mini tarjetas comerciales con imagen simulada, marca, nombre, precio, etiqueta y accion de vista rapida.
+- Se mantiene una sola fuente de datos: los productos ya usados por la HomePage.
+- Se conserva el comportamiento de busqueda, filtros, catalogo y carrito.
+- El panel cierra con Escape, al limpiar el campo o al hacer clic fuera.
+- El diseño se adapta a escritorio, tablet y movil sin crear una pagina nueva.
+
+Validacion:
+
+| Validacion | Estado | Observacion |
+|---|---|---|
+| `dart analyze` | Correcta | Sin issues. |
+| `git diff --check` | Correcta | Sin errores de espacios. |
+
+### 2026-07-11 - AS-054
+
+Se aplico una nueva identidad visual pastel kawaii elegante en el frontend publico.
+
+Cambios aplicados:
+
+- Se creo `frontend/lib/app/app_design_tokens.dart`.
+- Se centralizaron colores, radios y sombras.
+- Se cambio el fondo general a `#FFF8FB`.
+- Se reemplazaron verdes oscuros, dorados, borgoña y grises fuertes por rosa empolvado, lavanda, melocoton, menta y celeste.
+- Se configuro DM Serif Display para titulos y Nunito para textos mediante `google_fonts`.
+- Se aplico la identidad en tema global, HomePage, buscador predictivo, catalogo, carrito, layout y estados de feedback.
+- Se dejaron listas de color `womanTheme` y `manTheme` para preparar futuros temas por categoria sin implementar logica nueva.
+
+Limites respetados:
+
+- No se cambio la logica de API.
+- No se cambio la logica del carrito.
+- No se implementaron nuevas pantallas.
+- No se agregaron flujos de login, checkout, pagos ni administracion.
+
+Validacion:
+
+| Validacion | Estado | Observacion |
+|---|---|---|
+| Busqueda de colores antiguos principales | Correcta | No quedan `#145647`, `#E8C766`, `#102F29`, `#8A5A3B` ni equivalentes principales en `frontend/lib`. |
+| `dart analyze` | Correcta | Sin issues. |
+| `git diff --check` | Correcta | Sin errores de espacios. |

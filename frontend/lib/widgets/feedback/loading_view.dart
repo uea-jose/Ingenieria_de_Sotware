@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class LoadingView extends StatelessWidget {
   const LoadingView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F4),
+      backgroundColor: AppColors.bgPage,
       body: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(child: TopNavigationSkeleton()),
@@ -69,7 +71,7 @@ class TopNavigationSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
       child: Center(
         child: ConstrainedBox(
@@ -104,9 +106,9 @@ class _SkeletonProductCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE6E1D8)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +154,7 @@ class _SkeletonBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFE9E2D8),
+        color: AppColors.bgLavender,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

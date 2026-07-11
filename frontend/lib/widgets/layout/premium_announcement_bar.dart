@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class PremiumAnnouncementBar extends StatelessWidget {
   const PremiumAnnouncementBar({super.key});
 
@@ -7,7 +9,17 @@ class PremiumAnnouncementBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF102F29),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.bgSoftPink,
+            AppColors.bgLavender,
+            AppColors.bgBlue,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 9),
       child: Center(
         child: ConstrainedBox(
@@ -52,12 +64,12 @@ class _AnnouncementItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: const Color(0xFFE8C766)),
+        Icon(icon, size: 16, color: AppColors.primaryHover),
         const SizedBox(width: 6),
         Text(
           text,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),

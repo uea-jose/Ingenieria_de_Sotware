@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/brand.dart';
 import '../../models/category.dart';
 
@@ -36,10 +37,10 @@ class CatalogFilters extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 1280),
           child: Card(
             elevation: 0,
-            color: Colors.white,
+            color: AppColors.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-              side: const BorderSide(color: Color(0xFFE6E1D8)),
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              side: const BorderSide(color: AppColors.borderSoft),
             ),
             child: Padding(
               padding: const EdgeInsets.all(18),

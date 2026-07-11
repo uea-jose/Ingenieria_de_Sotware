@@ -37,9 +37,7 @@ class CartStorage {
     }
 
     html.window.localStorage[cartStorageKey] = jsonEncode(
-      quantities.map(
-        (productId, quantity) => MapEntry('$productId', quantity),
-      ),
+      quantities.map((productId, quantity) => MapEntry('$productId', quantity)),
     );
   }
 

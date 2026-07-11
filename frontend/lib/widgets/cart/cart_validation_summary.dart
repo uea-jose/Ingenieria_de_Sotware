@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/cart_validation.dart';
 
 class CartValidationSummary extends StatelessWidget {
@@ -13,10 +14,8 @@ class CartValidationSummary extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: validation.valid
-            ? const Color(0xFFEAF5EF)
-            : const Color(0xFFFFF6DB),
-        borderRadius: BorderRadius.circular(14),
+        color: validation.valid ? AppColors.bgMint : AppColors.bgPeach,
+        borderRadius: BorderRadius.circular(AppRadii.search),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,9 +26,7 @@ class CartValidationSummary extends StatelessWidget {
                 validation.valid
                     ? Icons.check_circle_outline
                     : Icons.warning_amber_rounded,
-                color: validation.valid
-                    ? const Color(0xFF145647)
-                    : const Color(0xFF684900),
+                color: validation.valid ? AppColors.success : AppColors.warning,
               ),
               const SizedBox(width: 8),
               Text(
@@ -52,7 +49,7 @@ class CartValidationSummary extends StatelessWidget {
             for (final alert in validation.stockAlerts)
               Text(
                 'Alerta: $alert',
-                style: const TextStyle(color: Color(0xFF684900)),
+                style: const TextStyle(color: AppColors.warning),
               ),
           ],
           if (validation.errors.isNotEmpty) ...[
@@ -60,7 +57,7 @@ class CartValidationSummary extends StatelessWidget {
             for (final error in validation.errors)
               Text(
                 'Error: $error',
-                style: const TextStyle(color: Color(0xFF8A1C1C)),
+                style: const TextStyle(color: AppColors.error),
               ),
           ],
         ],

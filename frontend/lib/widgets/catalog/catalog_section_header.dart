@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class CatalogSectionHeader extends StatelessWidget {
   const CatalogSectionHeader({
     required this.visibleProducts,
@@ -28,14 +30,14 @@ class CatalogSectionHeader extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF111111),
+                            color: AppColors.textPrimary,
                           ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Encuentra productos por marca, categoria o nombre. El stock se comunica con texto, no solo color.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xFF555555),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -45,7 +47,7 @@ class CatalogSectionHeader extends StatelessWidget {
               Text(
                 '$visibleProducts de $totalProducts',
                 style: const TextStyle(
-                  color: Color(0xFF145647),
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w900,
                 ),
               ),

@@ -39,10 +39,7 @@ class CartValidation {
                 .toList()
           : const [],
       errors: errors is List
-          ? errors
-                .map(asString)
-                .where((message) => message.isNotEmpty)
-                .toList()
+          ? errors.map(asString).where((message) => message.isNotEmpty).toList()
           : const [],
     );
   }

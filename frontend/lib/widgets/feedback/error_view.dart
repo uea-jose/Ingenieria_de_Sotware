@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
+
 class ErrorView extends StatelessWidget {
   const ErrorView({
     required this.message,
@@ -19,7 +21,7 @@ class ErrorView extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 520),
         child: Card(
           elevation: 0,
-          color: Colors.white,
+          color: AppColors.surface,
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -28,7 +30,7 @@ class ErrorView extends StatelessWidget {
                 const Icon(
                   Icons.wifi_off_outlined,
                   size: 48,
-                  color: Color(0xFF8A1C1C),
+                  color: AppColors.error,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -54,7 +56,7 @@ class ErrorView extends StatelessWidget {
                   details,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFF6D6A62),
+                    color: AppColors.textSecondary,
                     fontSize: 12,
                   ),
                 ),

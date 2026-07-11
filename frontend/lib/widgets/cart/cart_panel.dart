@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/cart_validation.dart';
 import '../../models/product.dart';
 import 'cart_product_row.dart';
@@ -38,7 +39,7 @@ class CartPanel extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surfaceSoft,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: ListView(
@@ -50,8 +51,8 @@ class CartPanel extends StatelessWidget {
                   width: 54,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD8D2C8),
-                    borderRadius: BorderRadius.circular(999),
+                    color: AppColors.borderSoft,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                 ),
               ),
@@ -64,7 +65,7 @@ class CartPanel extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF111111),
+                            color: AppColors.textPrimary,
                           ),
                     ),
                   ),
@@ -78,7 +79,7 @@ class CartPanel extends StatelessWidget {
               const SizedBox(height: 8),
               const Text(
                 'Revisa cantidades, disponibilidad y total antes de continuar.',
-                style: TextStyle(color: Color(0xFF68645D)),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 18),
               if (products.isEmpty)
@@ -102,7 +103,7 @@ class CartPanel extends StatelessWidget {
                       child: Text(
                         'Total estimado',
                         style: TextStyle(
-                          color: Color(0xFF68645D),
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -112,7 +113,7 @@ class CartPanel extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF145647),
+                            color: AppColors.primary,
                           ),
                     ),
                   ],
@@ -175,7 +176,11 @@ class _EmptyCartMessage extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 28),
       child: Column(
         children: [
-          Icon(Icons.shopping_bag_outlined, size: 52, color: Color(0xFF68645D)),
+          Icon(
+            Icons.shopping_bag_outlined,
+            size: 52,
+            color: AppColors.textSecondary,
+          ),
           SizedBox(height: 12),
           Text(
             'Tu carrito esta vacio.',

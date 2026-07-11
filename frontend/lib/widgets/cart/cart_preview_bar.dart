@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/cart_validation.dart';
 
 class CartPreviewBar extends StatelessWidget {
@@ -26,16 +27,17 @@ class CartPreviewBar extends StatelessWidget {
     final valid = validation?.valid;
 
     return Container(
-      color: const Color(0xFFFAF8F4),
+      color: AppColors.bgPage,
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1280),
           child: Card(
             elevation: 0,
-            color: const Color(0xFF102F29),
+            color: AppColors.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              side: const BorderSide(color: AppColors.borderSoft),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -50,13 +52,13 @@ class CartPreviewBar extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.shopping_bag_outlined,
-                        color: Color(0xFFE8C766),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 10),
                       Text(
                         '$itemCount producto${itemCount == 1 ? '' : 's'} en el carrito',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -65,7 +67,7 @@ class CartPreviewBar extends StatelessWidget {
                         Text(
                           'Total: \$${total.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            color: Color(0xFFE8C766),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -76,9 +78,7 @@ class CartPreviewBar extends StatelessWidget {
                           valid
                               ? Icons.check_circle_outline
                               : Icons.warning_amber_rounded,
-                          color: valid
-                              ? const Color(0xFF9FE7BD)
-                              : const Color(0xFFFFD66B),
+                          color: valid ? AppColors.success : AppColors.warning,
                           size: 20,
                         ),
                       ],
@@ -91,8 +91,8 @@ class CartPreviewBar extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: validating ? null : () => onValidate(),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white),
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.borderSoft),
                         ),
                         icon: validating
                             ? const SizedBox(
@@ -108,8 +108,8 @@ class CartPreviewBar extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: onOpenCart,
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFE8C766),
-                          foregroundColor: const Color(0xFF102F29),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.surface,
                         ),
                         icon: const Icon(Icons.open_in_new),
                         label: const Text('Ver carrito'),

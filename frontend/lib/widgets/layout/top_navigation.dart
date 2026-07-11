@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import 'brand_mark.dart';
 import 'cart_nav_button.dart';
 import 'premium_announcement_bar.dart';
@@ -8,20 +9,20 @@ class TopNavigation extends StatelessWidget {
   const TopNavigation({
     required this.onCatalogPressed,
     required this.onCartPressed,
-    required this.onSearchChanged,
     required this.cartCount,
+    required this.searchBox,
     super.key,
   });
 
   final VoidCallback onCatalogPressed;
   final VoidCallback onCartPressed;
-  final ValueChanged<String> onSearchChanged;
   final int cartCount;
+  final Widget searchBox;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       child: Column(
         children: [
           const PremiumAnnouncementBar(),
@@ -39,14 +40,36 @@ class TopNavigation extends StatelessWidget {
                       alignment: WrapAlignment.end,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        _NavButton(label: 'Inicio', onPressed: () {}),
                         _NavButton(
-                          label: 'Catalogo',
+                          label: 'Inicio',
+                          active: true,
+                          onPressed: () {},
+                        ),
+                        _NavButton(
+                          label: 'Perfumes',
+                          onPressed: onCatalogPressed,
+                        ),
+                        _NavButton(label: 'Mujer', onPressed: onCatalogPressed),
+                        _NavButton(
+                          label: 'Hombre',
+                          onPressed: onCatalogPressed,
+                        ),
+                        _NavButton(
+                          label: 'Unisex',
+                          onPressed: onCatalogPressed,
+                        ),
+                        _NavButton(
+                          label: 'Marcas',
                           onPressed: onCatalogPressed,
                         ),
                         _NavButton(
                           label: 'Promociones',
                           onPressed: onCatalogPressed,
+                        ),
+                        IconButton(
+                          tooltip: 'Favoritos visuales',
+                          onPressed: () {},
+                          icon: const Icon(Icons.favorite_border),
                         ),
                         CartNavButton(
                           count: cartCount,
@@ -78,24 +101,7 @@ class TopNavigation extends StatelessWidget {
                         Semantics(
                           textField: true,
                           label: 'Buscar perfumes, marcas o categorias',
-                          child: TextField(
-                            onChanged: onSearchChanged,
-                            decoration: InputDecoration(
-                              hintText: 'Buscar perfume, marca o categoria',
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon: const Icon(Icons.tune_outlined),
-                              filled: true,
-                              fillColor: const Color(0xFFF1F1F1),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(28),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 18,
-                              ),
-                            ),
-                          ),
+                          child: searchBox,
                         ),
                       ],
                     );
@@ -111,22 +117,97 @@ class TopNavigation extends StatelessWidget {
 }
 
 class _NavButton extends StatelessWidget {
-  const _NavButton({required this.label, required this.onPressed});
+  const _NavButton({
+    required this.label,
+    required this.onPressed,
+    this.active = false,
+  });
 
   final String label;
   final VoidCallback onPressed;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onPressed,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFF111111),
-          fontWeight: FontWeight.w800,
+    return _AnimatedNavLink(label: label, active: active, onPressed: onPressed);
+  }
+}
+
+class _AnimatedNavLink extends StatefulWidget {
+  const _AnimatedNavLink({
+    required this.label,
+    required this.active,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  State<_AnimatedNavLink> createState() => _AnimatedNavLinkState();
+}
+
+class _AnimatedNavLinkState extends State<_AnimatedNavLink> {
+  bool _hovered = false;
+  bool _focused = false;
+
+  bool get _showUnderline => widget.active || _hovered || _focused;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    return FocusableActionDetector(
+      onShowFocusHighlight: (focused) => setState(() => _focused = focused),
+      onShowHoverHighlight: (hovered) => setState(() => _hovered = hovered),
+      mouseCursor: SystemMouseCursors.click,
+      child: TextButton(
+        onPressed: widget.onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          backgroundColor: _hovered || _focused || widget.active
+              ? AppColors.bgSoftPink
+              : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.button),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.label,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedScale(
+              scale: _showUnderline ? 1 : 0,
+              alignment: Alignment.centerLeft,
+              duration: reduceMotion
+                  ? Duration.zero
+                  : const Duration(milliseconds: 240),
+              curve: Curves.easeOut,
+              child: Container(
+                width: _textUnderlineWidth(widget.label),
+                height: 2,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  double _textUnderlineWidth(String text) {
+    return (text.length * 7.4).clamp(34.0, 92.0);
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/product.dart';
 import 'product_badges.dart';
 import 'product_image.dart';
@@ -41,25 +42,17 @@ class _ProductCardState extends State<ProductCard> {
           curve: Curves.easeOut,
           transform: Matrix4.translationValues(0.0, _hovered ? -4.0 : 0.0, 0.0),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _hovered ? 0.12 : 0.05),
-                blurRadius: _hovered ? 30 : 18,
-                offset: Offset(0, _hovered ? 18 : 10),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            boxShadow: _hovered ? AppShadows.hover : AppShadows.base,
           ),
           child: Card(
             elevation: 0,
-            color: Colors.white,
+            color: AppColors.surface,
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadii.card),
               side: BorderSide(
-                color: _hovered
-                    ? const Color(0xFF145647)
-                    : const Color(0xFFE6E1D8),
+                color: _hovered ? AppColors.primary : AppColors.borderSoft,
               ),
             ),
             child: Column(
@@ -88,7 +81,7 @@ class _ProductCardState extends State<ProductCard> {
                               _showFavoriteMessage(context, product),
                           icon: const Icon(
                             Icons.favorite_border,
-                            color: Color(0xFF145647),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -106,7 +99,7 @@ class _ProductCardState extends State<ProductCard> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Color(0xFF145647),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.2,
                           ),
@@ -127,7 +120,9 @@ class _ProductCardState extends State<ProductCard> {
                           product.category.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Color(0xFF68645D)),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -135,7 +130,7 @@ class _ProductCardState extends State<ProductCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Color(0xFF58544D),
+                            color: AppColors.textSecondary,
                             height: 1.25,
                             fontSize: 13,
                           ),
@@ -149,7 +144,7 @@ class _ProductCardState extends State<ProductCard> {
                                 style: Theme.of(context).textTheme.headlineSmall
                                     ?.copyWith(
                                       fontWeight: FontWeight.w900,
-                                      color: const Color(0xFF111111),
+                                      color: AppColors.textPrimary,
                                     ),
                               ),
                             ),
