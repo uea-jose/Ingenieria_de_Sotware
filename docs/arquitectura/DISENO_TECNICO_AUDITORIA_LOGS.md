@@ -52,7 +52,7 @@ Nombre sugerido:
 auditoria_logs
 ```
 
-Columnas recomendadas:
+Columnas recomendadas para Aromas Store:
 
 | Columna | Tipo sugerido | Descripcion |
 |---|---|---|
@@ -65,11 +65,40 @@ Columnas recomendadas:
 | TraceId | texto | Identificador unico de la accion. |
 | GUIDSESION | texto | Identificador de la sesion del usuario. |
 | usuarioId | entero opcional | Usuario autenticado, si existe. |
-| identificacion | texto opcional | Identificacion del cliente o usuario cuando aplique. |
+| clienteId | entero opcional | Cliente relacionado con carrito, venta o factura. |
+| ventaId | entero opcional | Venta relacionada con pago o factura. |
+| productoId | entero opcional | Producto principal relacionado cuando aplique. |
 | estadoHttp | entero | Codigo HTTP de respuesta. |
 | duracionMs | entero | Tiempo de procesamiento. |
 | resultado | texto | OK, ERROR_NEGOCIO o ERROR_TECNICO. |
-| mensaje | texto | Mensaje corto para diagnostico. |
+| codigoRespuesta | texto opcional | Codigo funcional o tecnico de respuesta. |
+| mensajeRespuesta | texto | Mensaje corto para diagnostico o reporte. |
+
+## Adaptacion al dominio de Aromas Store
+
+Este diseno toma como referencia sistemas transaccionales profesionales, pero no copia campos que no pertenecen a una tienda de perfumes.
+
+No se usaran campos como:
+
+- CodigoAgencia;
+- CodigoCentro;
+- CodigoMedioInvocacion;
+- HashMobil;
+- Comision;
+- CuentaOrigen.
+
+En Aromas Store los campos utiles para trazabilidad y reportes son:
+
+| Campo | Uso en el proyecto |
+|---|---|
+| usuarioId | Saber que usuario interno o cliente autenticado ejecuto la accion. |
+| clienteId | Relacionar acciones con el cliente comprador. |
+| ventaId | Seguir el ciclo de una venta desde creacion hasta pago/factura. |
+| productoId | Analizar acciones asociadas a un producto. |
+| codigoRespuesta | Clasificar OK, validacion o error. |
+| mensajeRespuesta | Mostrar mensajes claros en reportes. |
+| datoIngreso | Revisar el JSON recibido por la API. |
+| datoRespuesta | Revisar el JSON devuelto por la API. |
 
 ## Ejemplo de registro
 
@@ -103,10 +132,36 @@ Columnas recomendadas:
   },
   "TraceId": "952b76601624b3de0b8d83a616c08d42",
   "GUIDSESION": "e45ff230-a42e-4569-9af4-57b4a1a1e388",
+  "usuarioId": null,
+  "clienteId": null,
+  "ventaId": null,
+  "productoId": 1,
   "estadoHttp": 200,
   "duracionMs": 84,
   "resultado": "OK",
-  "mensaje": "Carrito validado correctamente"
+  "codigoRespuesta": "00000",
+  "mensajeRespuesta": "Carrito validado correctamente"
+}
+```
+
+Ejemplo para una venta:
+
+```json
+{
+  "timestamp": "2026-07-22T23:11:02-05:00",
+  "path": "/api/ventas",
+  "metodo": "POST",
+  "TraceId": "0bd496d98bf2e2d7c7b4c367527d02c7",
+  "GUIDSESION": "e45ff230-a42e-4569-9af4-57b4a1a1e388",
+  "usuarioId": 1,
+  "clienteId": 3,
+  "ventaId": 15,
+  "productoId": null,
+  "estadoHttp": 201,
+  "duracionMs": 126,
+  "resultado": "OK",
+  "codigoRespuesta": "00000",
+  "mensajeRespuesta": "Venta creada correctamente"
 }
 ```
 
@@ -176,18 +231,29 @@ Cuando se implemente, se recomienda exponer consultas solo para usuarios interno
 | GET | `/api/auditoria/logs` | Listar registros recientes. |
 | GET | `/api/auditoria/logs?GUIDSESION=...` | Ver toda una sesion. |
 | GET | `/api/auditoria/logs?TraceId=...` | Ver una accion especifica. |
-| GET | `/api/auditoria/logs?identificacion=...` | Buscar acciones por cliente o usuario. |
+| GET | `/api/auditoria/logs?usuarioId=...` | Buscar acciones por usuario. |
+| GET | `/api/auditoria/logs?clienteId=...` | Buscar acciones por cliente. |
+| GET | `/api/auditoria/logs?ventaId=...` | Seguir una venta completa. |
+| GET | `/api/auditoria/logs?productoId=...` | Buscar acciones sobre un producto. |
 | GET | `/api/auditoria/logs?path=/api/pagos` | Filtrar por endpoint. |
 
 ## Consulta esperada
 
-Ejemplo de vista o resultado:
+Ejemplo de vista tecnica:
 
 | timestamp | path | metodo | datoIngreso | datoRespuesta | TraceId | GUIDSESION |
 |---|---|---|---|---|---|---|
 | 2026-07-22 23:10:15 | `/api/carrito/validar` | POST | JSON | JSON | `952b...8d42` | `e45f...e388` |
 | 2026-07-22 23:11:02 | `/api/ventas` | POST | JSON | JSON | `0bd4...02c7` | `e45f...e388` |
 | 2026-07-22 23:12:30 | `/api/pagos` | POST | JSON | JSON | `fa8a...d5c6` | `e45f...e388` |
+
+Ejemplo de vista para reportes:
+
+| timestamp | path | usuarioId | clienteId | ventaId | productoId | codigoRespuesta | mensajeRespuesta |
+|---|---|---:|---:|---:|---:|---|---|
+| 2026-07-22 23:10:15 | `/api/carrito/validar` |  |  |  | 1 | `00000` | Carrito validado correctamente |
+| 2026-07-22 23:11:02 | `/api/ventas` | 1 | 3 | 15 |  | `00000` | Venta creada correctamente |
+| 2026-07-22 23:12:30 | `/api/pagos` | 1 | 3 | 15 |  | `00000` | Pago registrado correctamente |
 
 ## Orden recomendado de implementacion
 

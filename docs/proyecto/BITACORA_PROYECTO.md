@@ -113,6 +113,7 @@ Roles principales:
 
 | 2026-07-22 | RNF-01, RNF-07, RNF-10 | AS-056 | Arquitectura de auditoria y observabilidad | Se definio una guia simple para manejar GUIDSESION, TraceId, respuestas transaccionales, logs, metricas, trazas, errores de negocio y errores tecnicos. | `docs/arquitectura/ARQUITECTURA_AUDITORIA_OBSERVABILIDAD_TRANSACCIONES.md` creado como propuesta documental sin modificar codigo. | Completado |
 | 2026-07-22 | RNF-01, RNF-07, RNF-10 | AS-057 | Diseno tecnico de auditoria de APIs | Se documento la propuesta tecnica para registrar timestamp, path, metodo, datoIngreso, datoRespuesta, TraceId y GUIDSESION por cada llamada relevante al backend. | `docs/arquitectura/DISENO_TECNICO_AUDITORIA_LOGS.md` creado con tabla propuesta, middleware, endpoints futuros de consulta, datos sensibles y pruebas recomendadas. | Completado |
+| 2026-07-22 | RNF-01, RNF-07, RNF-10 | AS-058 | Adaptacion de auditoria al dominio Aromas Store | Se ajusto el diseno tecnico para evitar campos ajenos al proyecto y priorizar usuarioId, clienteId, ventaId, productoId, codigoRespuesta y mensajeRespuesta. | `docs/arquitectura/DISENO_TECNICO_AUDITORIA_LOGS.md` actualizado con ejemplos de carrito, venta y reportes adaptados a la tienda. | Completado |
 
 ## Endpoints Implementados
 
