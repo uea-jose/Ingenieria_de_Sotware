@@ -29,6 +29,7 @@ docs/
 Carpeta reservada para decisiones transversales del sistema:
 
 - [ARQUITECTURA_AUDITORIA_OBSERVABILIDAD_TRANSACCIONES.md](arquitectura/ARQUITECTURA_AUDITORIA_OBSERVABILIDAD_TRANSACCIONES.md): estandar futuro para auditoria, GUIDSESION, TraceId, respuestas transaccionales, logs, metricas y trazas.
+- [DISENO_TECNICO_AUDITORIA_LOGS.md](arquitectura/DISENO_TECNICO_AUDITORIA_LOGS.md): diseno tecnico de tabla, middleware, endpoints de consulta y pruebas para auditoria de APIs.
 - auditoria;
 - observabilidad;
 - trazabilidad;

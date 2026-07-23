@@ -112,6 +112,7 @@ Roles principales:
 | 2026-07-11 | RNF-09, RNF-12 | AS-055 | Subrayado animado en menu principal | Se mejoro exclusivamente la interaccion visual de los enlaces principales del header con subrayado animado rosa malva, compatible con hover, foco por teclado y estado activo. | `frontend/lib/widgets/layout/top_navigation.dart` actualizado sin cambiar rutas, navegacion, carrito, sesion ni estructura general del header. `dart analyze` sin issues. | Completado |
 
 | 2026-07-22 | RNF-01, RNF-07, RNF-10 | AS-056 | Arquitectura de auditoria y observabilidad | Se definio una guia simple para manejar GUIDSESION, TraceId, respuestas transaccionales, logs, metricas, trazas, errores de negocio y errores tecnicos. | `docs/arquitectura/ARQUITECTURA_AUDITORIA_OBSERVABILIDAD_TRANSACCIONES.md` creado como propuesta documental sin modificar codigo. | Completado |
+| 2026-07-22 | RNF-01, RNF-07, RNF-10 | AS-057 | Diseno tecnico de auditoria de APIs | Se documento la propuesta tecnica para registrar timestamp, path, metodo, datoIngreso, datoRespuesta, TraceId y GUIDSESION por cada llamada relevante al backend. | `docs/arquitectura/DISENO_TECNICO_AUDITORIA_LOGS.md` creado con tabla propuesta, middleware, endpoints futuros de consulta, datos sensibles y pruebas recomendadas. | Completado |
 
 ## Endpoints Implementados
 
