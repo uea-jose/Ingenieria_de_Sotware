@@ -23,9 +23,22 @@ Esto aplica especialmente a:
 
 ## Principio central
 
-Cada transaccion importante debe tener un identificador unico.
+El modelo de trazabilidad de Aromas Store debe mantenerse simple: usar un identificador de sesion y un identificador de traza.
 
-Ese identificador debe viajar por todos los pasos del flujo para poder responder preguntas como:
+Una misma sesion puede tener varias trazas. Cada traza representa una accion o invocacion importante dentro de esa sesion.
+
+Ejemplo:
+
+```txt
+GUIDSESION: e45ff230-a42e-4569-9af4-57b4a1a1e388
+  TraceId 1: iniciar sesion
+  TraceId 2: validar dispositivo
+  TraceId 3: consultar catalogo
+  TraceId 4: validar carrito
+  TraceId 5: registrar pago
+```
+
+Estos identificadores deben viajar por los pasos del flujo para poder responder preguntas como:
 
 - que usuario ejecuto la accion;
 - desde donde se ejecuto;
@@ -40,13 +53,12 @@ Ese identificador debe viajar por todos los pasos del flujo para poder responder
 
 | Concepto | Proposito |
 |---|---|
-| Correlation ID | Une todos los eventos de una misma operacion. |
-| Trace ID | Permite ver el recorrido tecnico de una peticion entre servicios. |
-| Transaction ID | Identifica una operacion de negocio, como pago, venta o factura. |
+| GUIDSESION / SessionId | Agrupa todas las acciones que realiza un usuario durante una misma sesion. |
+| TraceId | Identifica una accion o recorrido puntual dentro de una sesion. |
 | Audit log | Registra quien hizo que, cuando, desde donde y con que resultado. |
 | Event log | Registra eventos tecnicos y de negocio para diagnostico. |
 | Metricas | Permiten medir volumen, tiempos, errores y disponibilidad. |
-| Trazas | Permiten reconstruir el camino completo de una operacion. |
+| Trazas | Permiten reconstruir el camino completo de una accion. |
 
 ## Estructura recomendada de request
 
@@ -56,17 +68,18 @@ Ejemplo conceptual:
 
 ```json
 {
-  "auditoria": {
-    "correlationId": "b7b2b7b6-6d0c-4c6f-9d1a-3b6c5c2d9f21",
-    "traceId": "trace-20260722-001",
-    "canal": "WEB",
-    "ipCliente": "127.0.0.1",
-    "usuarioId": 1,
-    "rol": "Cliente",
-    "accion": "CREAR_VENTA",
-    "fechaSolicitud": "2026-07-22T22:45:00-05:00"
+  "Auditoria": {
+    "GUIDSESION": "e45ff230-a42e-4569-9af4-57b4a1a1e388",
+    "TraceId": "952b76601624b3de0b8d83a616c08d42",
+    "Usuario": "GENERICO",
+    "Fecha": "2026-07-22T22:45:00-05:00",
+    "IpCliente": "127.0.0.1",
+    "Identificacion": "0704527167",
+    "CodigoCanal": "WEB",
+    "CodigoTransaccion": "CREAR_VENTA",
+    "CodigoMedioInvocacion": "FLUTTER_WEB"
   },
-  "datos": {
+  "Datos": {
     "clienteId": 3,
     "items": [
       {
@@ -86,15 +99,16 @@ Ejemplo exitoso:
 
 ```json
 {
-  "respuesta": {
+  "Respuesta": {
     "codigo": "00000",
     "mensaje": "Operacion procesada correctamente",
     "operacionProcesada": true,
     "fechaRespuesta": "2026-07-22T22:45:03-05:00",
-    "correlationId": "b7b2b7b6-6d0c-4c6f-9d1a-3b6c5c2d9f21",
-    "transactionId": "VEN-20260722-0001"
+    "GUIDSESION": "e45ff230-a42e-4569-9af4-57b4a1a1e388",
+    "TraceId": "952b76601624b3de0b8d83a616c08d42",
+    "NumeroDocumentoOperacion": "VEN-20260722-0001"
   },
-  "datos": {
+  "Datos": {
     "ventaId": 15,
     "estado": "PENDIENTE",
     "subtotal": 139.98,
@@ -108,15 +122,16 @@ Ejemplo con error controlado:
 
 ```json
 {
-  "respuesta": {
+  "Respuesta": {
     "codigo": "STOCK_INSUFICIENTE",
     "mensaje": "No existe stock suficiente para completar la operacion",
     "operacionProcesada": false,
     "fechaRespuesta": "2026-07-22T22:46:10-05:00",
-    "correlationId": "b7b2b7b6-6d0c-4c6f-9d1a-3b6c5c2d9f21",
-    "transactionId": null
+    "GUIDSESION": "e45ff230-a42e-4569-9af4-57b4a1a1e388",
+    "TraceId": "952b76601624b3de0b8d83a616c08d42",
+    "NumeroDocumentoOperacion": null
   },
-  "error": {
+  "Error": {
     "tipo": "NEGOCIO",
     "detalle": "Producto 1 solicitado: 5, disponible: 2"
   }
@@ -127,15 +142,16 @@ Ejemplo con error tecnico:
 
 ```json
 {
-  "respuesta": {
+  "Respuesta": {
     "codigo": "ERROR_MICROSERVICIO",
     "mensaje": "No fue posible procesar la operacion en este momento",
     "operacionProcesada": false,
     "fechaRespuesta": "2026-07-22T22:47:20-05:00",
-    "correlationId": "b7b2b7b6-6d0c-4c6f-9d1a-3b6c5c2d9f21",
-    "transactionId": null
+    "GUIDSESION": "e45ff230-a42e-4569-9af4-57b4a1a1e388",
+    "TraceId": "952b76601624b3de0b8d83a616c08d42",
+    "NumeroDocumentoOperacion": null
   },
-  "error": {
+  "Error": {
     "tipo": "TECNICO",
     "servicio": "pagos",
     "detalleSeguro": "Error al invocar servicio de pagos"
@@ -158,7 +174,7 @@ Eventos recomendados:
 | PAGO_REGISTRADO | Venta, metodo, monto, estado, numero de transaccion. |
 | FACTURA_GENERADA | Venta, factura, numero, total. |
 | INVENTARIO_ACTUALIZADO | Producto, cantidad anterior, cantidad nueva, motivo. |
-| ERROR_TRANSACCIONAL | Endpoint, codigo, mensaje, correlationId, servicio afectado. |
+| ERROR_TRANSACCIONAL | Endpoint, codigo, mensaje, GUIDSESION, TraceId, servicio afectado. |
 
 ## Observabilidad tecnica
 
@@ -182,9 +198,8 @@ Campos minimos recomendados en logs:
 - durationMs;
 - userId;
 - role;
-- correlationId;
-- traceId;
-- transactionId;
+- GUIDSESION;
+- TraceId;
 - message.
 
 ## Seguridad
@@ -217,11 +232,12 @@ Objetivo:
 - establecer campos minimos de auditoria;
 - preparar la bitacora para futuras historias.
 
-### Etapa 2: Middleware de correlation ID
+### Etapa 2: Middleware de GUIDSESION y TraceId
 
 Objetivo futuro:
 
-- generar un `correlationId` si el frontend no lo envia;
+- generar un `GUIDSESION` si el frontend no lo envia;
+- generar un `TraceId` por cada request relevante;
 - devolverlo siempre en la respuesta;
 - incluirlo en logs del backend.
 
@@ -230,7 +246,7 @@ Objetivo futuro:
 Objetivo futuro:
 
 - unificar respuestas de login, ventas, pagos, facturas y carrito;
-- separar `respuesta`, `datos` y `error`;
+- separar `Respuesta`, `Datos` y `Error`;
 - mantener compatibilidad con el frontend.
 
 ### Etapa 4: Auditoria persistente
@@ -239,7 +255,7 @@ Objetivo futuro:
 
 - crear tabla de auditoria;
 - registrar eventos sensibles;
-- consultar trazas por usuario, venta, factura o correlationId.
+- consultar trazas por usuario, venta, factura, GUIDSESION o TraceId.
 
 ### Etapa 5: Observabilidad avanzada
 
@@ -260,18 +276,18 @@ sequenceDiagram
     participant L as Logs y auditoria
 
     U->>F: Agrega producto al carrito
-    F->>B: POST /api/carrito/validar con correlationId
+    F->>B: POST /api/carrito/validar con GUIDSESION y TraceId
     B->>DB: Consulta stock y precios
     B->>L: Registra validacion de carrito
     B-->>F: Respuesta validada
 
     U->>F: Confirma compra
-    F->>B: POST /api/ventas con correlationId
+    F->>B: POST /api/ventas con GUIDSESION y TraceId
     B->>DB: Crea venta pendiente
     B->>L: Registra venta creada
     B-->>F: Venta creada
 
-    F->>B: POST /api/pagos con correlationId
+    F->>B: POST /api/pagos con GUIDSESION y TraceId
     B->>DB: Registra pago y descuenta inventario
     B->>L: Registra pago e inventario
     B-->>F: Pago procesado
