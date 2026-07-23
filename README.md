@@ -98,11 +98,11 @@ http://127.0.0.1:8080
 
 ## Documentacion principal
 
-- `docs/BITACORA_PROYECTO.md`
-- `docs/API_DOCUMENTACION.md`
-- `docs/PRUEBAS_BACKEND.md`
-- `docs/GUIA_DISENO_IHC_UX_UI.md`
-- `docs/MEJORAS_DISENO_FRONTEND_AS040.md`
+- `docs/proyecto/BITACORA_PROYECTO.md`
+- `docs/backend/API_DOCUMENTACION.md`
+- `docs/backend/PRUEBAS_BACKEND.md`
+- `docs/ux-ui/GUIA_DISENO_IHC_UX_UI.md`
+- `docs/frontend/MEJORAS_DISENO_FRONTEND_AS040.md`
 
 ## Estado actual
 
