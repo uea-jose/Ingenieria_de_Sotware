@@ -9,6 +9,7 @@ docs/
   backend/
   frontend/
   arquitectura/
+  requerimientos/
   ux-ui/
   proyecto/
 ```
@@ -36,6 +37,10 @@ Carpeta reservada para decisiones transversales del sistema:
 - seguridad;
 - respuestas transaccionales;
 - integracion entre frontend, backend y servicios.
+
+## Requerimientos
+
+- [MODULO_ACORDES_Y_SIMILITUD.md](requerimientos/MODULO_ACORDES_Y_SIMILITUD.md): propuesta candidata para acordes aromaticos, perfiles de perfume y busqueda de perfumes similares.
 
 ## UX/UI
 

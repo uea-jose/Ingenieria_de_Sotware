@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { swaggerSpec, swaggerUi, swaggerUiOptions } from "./config/swagger.js";
+import { auditoriaMiddleware } from "./modules/auditoria/auditoria.middleware.js";
 import routes from "./routes/index.js";
 
 const app = express();
@@ -13,7 +14,7 @@ app.get("/api/docs.json", (req, res) => {
   res.json(swaggerSpec);
 });
 
-app.use("/api", routes);
+app.use("/api", auditoriaMiddleware, routes);
 
 app.use((req, res) => {
   res.status(404).json({

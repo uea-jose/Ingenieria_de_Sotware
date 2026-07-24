@@ -231,3 +231,32 @@ model Promocion {
 
   @@map("promociones")
 }
+
+model AuditoriaLog {
+  id               Int      @id @default(autoincrement())
+  fecha            DateTime @default(now())
+  path             String   @db.VarChar(255)
+  metodo           String   @db.VarChar(10)
+  datoIngreso      Json?
+  datoRespuesta    Json?
+  traceId          String   @db.VarChar(80)
+  guidSesion       String   @db.VarChar(80)
+  usuarioId        Int?
+  clienteId        Int?
+  ventaId          Int?
+  productoId       Int?
+  estadoHttp       Int?
+  duracionMs       Int?
+  resultado        String   @db.VarChar(40)
+  codigoRespuesta  String?  @db.VarChar(80)
+  mensajeRespuesta String?  @db.VarChar(255)
+
+  @@index([traceId])
+  @@index([guidSesion])
+  @@index([usuarioId])
+  @@index([clienteId])
+  @@index([ventaId])
+  @@index([productoId])
+  @@index([path])
+  @@map("auditoria_logs")
+}

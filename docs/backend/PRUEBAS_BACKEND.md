@@ -16,6 +16,7 @@ Estas pruebas verifican:
 - Consulta de catalogo.
 - Validacion de carrito.
 - Consulta de inventario, ventas, pagos, facturas y promociones.
+- Consulta protegida de logs de auditoria.
 
 ## Requisitos previos
 
@@ -52,7 +53,7 @@ npm run test:api
 El comando debe mostrar las comprobaciones con estado `OK` y un resumen similar a:
 
 ```txt
-Resultado: 17/17 pruebas correctas.
+Resultado: 18/18 pruebas correctas.
 ```
 
 ## Rutas incluidas en la prueba
@@ -64,6 +65,7 @@ Resultado: 17/17 pruebas correctas.
 | GET | `/api/docs.json` | Swagger/OpenAPI disponible |
 | POST | `/api/auth/login` | Generacion de token JWT |
 | GET | `/api/auth/me` | Token valido |
+| GET | `/api/auditoria/logs` | Auditoria protegida para Administrador |
 | GET | `/api/productos` | Catalogo disponible |
 | GET | `/api/categorias` | Categorias disponibles |
 | GET | `/api/marcas` | Marcas disponibles |

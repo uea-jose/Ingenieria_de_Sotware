@@ -401,7 +401,95 @@ PORCENTAJE
 MONTO
 ```
 
-## 16. Codigos de respuesta comunes
+## 16. Endpoints de auditoria
+
+La API registra automaticamente logs de auditoria para las rutas bajo `/api`.
+
+Cada registro puede incluir:
+
+- `fecha`;
+- `path`;
+- `metodo`;
+- `datoIngreso`;
+- `datoRespuesta`;
+- `traceId`;
+- `guidSesion`;
+- `usuarioId`;
+- `clienteId`;
+- `ventaId`;
+- `productoId`;
+- `estadoHttp`;
+- `duracionMs`;
+- `resultado`;
+- `codigoRespuesta`;
+- `mensajeRespuesta`.
+
+El backend acepta trazabilidad mediante headers:
+
+```txt
+X-GUIDSESION: identificador-de-sesion
+X-Trace-Id: identificador-de-traza
+```
+
+Tambien puede leerlos desde el cuerpo JSON si existe una seccion `Auditoria`:
+
+```json
+{
+  "Auditoria": {
+    "GUIDSESION": "sesion-demo",
+    "TraceId": "trace-demo"
+  }
+}
+```
+
+Endpoint de consulta:
+
+| Metodo | Ruta | Descripcion | Seguridad |
+|---|---|---|---|
+| GET | `/api/auditoria/logs` | Lista logs recientes de auditoria. | Administrador |
+
+Filtros disponibles:
+
+```txt
+/api/auditoria/logs?GUIDSESION=sesion-demo
+/api/auditoria/logs?TraceId=trace-demo
+/api/auditoria/logs?usuarioId=1
+/api/auditoria/logs?clienteId=3
+/api/auditoria/logs?ventaId=15
+/api/auditoria/logs?productoId=1
+/api/auditoria/logs?path=/api/pagos
+/api/auditoria/logs?limit=50
+```
+
+Ejemplo de respuesta:
+
+```json
+{
+  "datos": [
+    {
+      "id": 1,
+      "path": "/api/carrito/validar",
+      "metodo": "POST",
+      "traceId": "trace-demo",
+      "guidSesion": "sesion-demo",
+      "productoId": 1,
+      "estadoHttp": 200,
+      "resultado": "OK",
+      "codigoRespuesta": "00000",
+      "mensajeRespuesta": "Operacion procesada correctamente"
+    }
+  ],
+  "total": 1
+}
+```
+
+Seguridad:
+
+- El endpoint de consulta requiere rol `Administrador`.
+- El middleware oculta campos sensibles como `contrasena`, `password`, `token` y `authorization`.
+- Si falla el registro de auditoria, la respuesta principal de la API no se bloquea.
+
+## 17. Codigos de respuesta comunes
 
 | Codigo | Significado |
 |---|---|
@@ -413,7 +501,7 @@ MONTO
 | 404 | Recurso no encontrado. |
 | 500 | Error interno del servidor. |
 
-## 17. Prueba rapida del backend
+## 18. Prueba rapida del backend
 
 Para validar los endpoints principales:
 
@@ -425,10 +513,10 @@ npm run test:api
 Resultado esperado:
 
 ```txt
-Resultado: 17/17 pruebas correctas.
+Resultado: 18/18 pruebas correctas.
 ```
 
-## 18. Observaciones de mantenimiento
+## 19. Observaciones de mantenimiento
 
 - Si se agrega una nueva ruta, debe actualizarse Swagger.
 - Si se agrega un nuevo modulo, debe documentarse en este archivo.

@@ -89,6 +89,13 @@ async function main() {
     await request("/api/auth/me", { headers: authHeaders() });
   });
 
+  await check("Auditoria protegida", async () => {
+    const data = await request("/api/auditoria/logs", { headers: authHeaders() });
+    if (!Array.isArray(data.datos)) {
+      throw new Error("Auditoria no devuelve arreglo de datos.");
+    }
+  });
+
   await check("Catalogo de productos", async () => {
     const data = await request("/api/productos");
     if (!Array.isArray(data.datos)) {

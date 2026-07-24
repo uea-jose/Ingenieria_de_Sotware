@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import auditoriaRoutes from "../modules/auditoria/auditoria.routes.js";
 import authRoutes from "../modules/auth/auth.routes.js";
 import brandsRoutes from "../modules/brands/brands.routes.js";
 import carritoRoutes from "../modules/carrito/carrito.routes.js";
@@ -60,6 +61,7 @@ router.get("/", (req, res) => {
       { metodo: "POST", ruta: "/api/promociones", descripcion: "Crea una promocion. Requiere Administrador o Vendedor." },
       { metodo: "PUT", ruta: "/api/promociones/:id", descripcion: "Actualiza una promocion. Requiere Administrador o Vendedor." },
       { metodo: "PATCH", ruta: "/api/promociones/:id/estado", descripcion: "Activa o desactiva una promocion. Requiere Administrador o Vendedor." },
+      { metodo: "GET", ruta: "/api/auditoria/logs", descripcion: "Lista logs de auditoria. Requiere Administrador." },
       { metodo: "GET", ruta: "/api/products", descripcion: "Alias temporal de /api/productos." },
       { metodo: "GET", ruta: "/api/categories", descripcion: "Alias temporal de /api/categorias." },
       { metodo: "GET", ruta: "/api/brands", descripcion: "Alias temporal de /api/marcas." },
@@ -76,6 +78,7 @@ router.get("/health", (req, res) => {
 });
 
 router.use("/auth", authRoutes);
+router.use("/auditoria", auditoriaRoutes);
 router.use("/carrito", carritoRoutes);
 router.use("/clientes", clientesRoutes);
 router.use("/facturas", facturasRoutes);
