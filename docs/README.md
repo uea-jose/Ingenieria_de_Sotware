@@ -22,6 +22,7 @@ docs/
 ## Frontend
 
 - [FRONTEND_REFACTORIZACION_ESTRUCTURAL.md](frontend/FRONTEND_REFACTORIZACION_ESTRUCTURAL.md): estructura Flutter Web, refactorizacion, HomePage, buscador y diseño.
+- [DISENO_TECNICO_DETALLE_PRODUCTO.md](frontend/DISENO_TECNICO_DETALLE_PRODUCTO.md): diseno tecnico previo para la futura pantalla de detalle de producto.
 - [MEJORAS_DISENO_FRONTEND_AS040.md](frontend/MEJORAS_DISENO_FRONTEND_AS040.md): mejoras visuales iniciales del catalogo publico.
 - [MEJORAS_CARRITO_FRONTEND_AS044.md](frontend/MEJORAS_CARRITO_FRONTEND_AS044.md): mejoras del carrito web.
 
