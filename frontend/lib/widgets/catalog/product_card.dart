@@ -9,11 +9,13 @@ class ProductCard extends StatefulWidget {
   const ProductCard({
     required this.product,
     required this.onAddToCart,
+    required this.onViewDetails,
     super.key,
   });
 
   final Product product;
   final ValueChanged<Product> onAddToCart;
+  final ValueChanged<Product> onViewDetails;
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -159,13 +161,12 @@ class _ProductCardState extends State<ProductCard> {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: TextButton.icon(
-                            onPressed: () =>
-                                _showQuickViewMessage(context, product),
+                            onPressed: () => widget.onViewDetails(product),
                             icon: const Icon(
                               Icons.visibility_outlined,
                               size: 18,
                             ),
-                            label: const Text('Vista rapida'),
+                            label: const Text('Ver detalle'),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -204,14 +205,4 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  void _showQuickViewMessage(BuildContext context, Product product) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Vista rapida de ${product.name} preparada para el siguiente modulo.',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 }

@@ -70,6 +70,7 @@ class ProductShowcaseSection extends StatelessWidget {
     required this.subtitle,
     required this.products,
     required this.onAddToCart,
+    required this.onViewDetails,
     super.key,
   });
 
@@ -77,6 +78,7 @@ class ProductShowcaseSection extends StatelessWidget {
   final String subtitle;
   final List<Product> products;
   final ValueChanged<Product> onAddToCart;
+  final ValueChanged<Product> onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +105,7 @@ class ProductShowcaseSection extends StatelessWidget {
                   child: ProductCard(
                     product: product,
                     onAddToCart: onAddToCart,
+                    onViewDetails: onViewDetails,
                   ),
                 ),
             ],

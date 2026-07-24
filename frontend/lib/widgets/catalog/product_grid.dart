@@ -7,11 +7,13 @@ class ProductGrid extends StatelessWidget {
   const ProductGrid({
     required this.products,
     required this.onAddToCart,
+    required this.onViewDetails,
     super.key,
   });
 
   final List<Product> products;
   final ValueChanged<Product> onAddToCart;
+  final ValueChanged<Product> onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,7 @@ class ProductGrid extends StatelessWidget {
               (context, index) => ProductCard(
                 product: products[index],
                 onAddToCart: onAddToCart,
+                onViewDetails: onViewDetails,
               ),
               childCount: products.length,
             ),

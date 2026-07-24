@@ -10,6 +10,7 @@ class Product {
     required this.code,
     required this.description,
     required this.price,
+    required this.volumeMl,
     required this.imageUrl,
     required this.active,
     required this.categoryId,
@@ -24,6 +25,7 @@ class Product {
   final String code;
   final String description;
   final double price;
+  final int? volumeMl;
   final String? imageUrl;
   final bool active;
   final int categoryId;
@@ -39,6 +41,7 @@ class Product {
       code: asString(json['codigo']),
       description: asString(json['descripcion']),
       price: asDouble(json['precio']),
+      volumeMl: json['volumenMl'] == null ? null : asInt(json['volumenMl']),
       imageUrl: json['imagenUrl'] as String?,
       active: json['activo'] == true,
       categoryId: asInt(json['categoriaId']),

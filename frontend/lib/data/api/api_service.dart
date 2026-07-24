@@ -34,6 +34,17 @@ class ApiService {
     return CartValidation.fromJson(json);
   }
 
+  static Future<Product> loadProductById(int productId) async {
+    final json = await _getJson('$apiBaseUrl/productos/$productId');
+    final value = json['dato'] ?? json['data'] ?? json;
+
+    if (value is Map<String, dynamic>) {
+      return Product.fromJson(value);
+    }
+
+    throw Exception('Producto no encontrado.');
+  }
+
   static Future<Map<String, dynamic>> _getJson(String url) async {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode < 200 || response.statusCode >= 300) {

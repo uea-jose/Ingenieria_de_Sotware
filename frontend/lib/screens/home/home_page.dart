@@ -20,6 +20,7 @@ import '../../widgets/cart/cart_preview_bar.dart';
 import '../../widgets/feedback/error_view.dart';
 import '../../widgets/feedback/loading_view.dart';
 import '../../widgets/layout/top_navigation.dart';
+import '../product_detail/product_detail_page.dart';
 import 'demo_home_catalog.dart';
 import 'home_commercial_sections.dart';
 import 'home_search_box.dart';
@@ -169,6 +170,23 @@ class _HomePageState extends State<HomePage> {
           : 'Cantidad actualizada en el carrito.',
     );
     await _validateCart(showMessages: false);
+  }
+
+  Future<void> _openProductDetail(Product product) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ProductDetailPage(
+          productId: product.id,
+          initialProduct: product,
+          cartCount: _cartCount,
+          onAddToCart: _addToCart,
+        ),
+      ),
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _changeCartQuantity(Product product, int nextQuantity) async {
@@ -635,6 +653,7 @@ class _HomePageState extends State<HomePage> {
                       'Perfumes de muestra y catalogo real en una misma experiencia.',
                   products: featuredProducts,
                   onAddToCart: _addToCart,
+                  onViewDetails: _openProductDetail,
                 ),
               ),
               SliverToBoxAdapter(
@@ -649,6 +668,7 @@ class _HomePageState extends State<HomePage> {
                       'Opciones populares para comparar rapido sin salir de la portada.',
                   products: bestSellers,
                   onAddToCart: _addToCart,
+                  onViewDetails: _openProductDetail,
                 ),
               ),
               SliverToBoxAdapter(
@@ -703,7 +723,11 @@ class _HomePageState extends State<HomePage> {
               if (products.isEmpty)
                 const SliverToBoxAdapter(child: EmptyCatalogView())
               else
-                ProductGrid(products: products, onAddToCart: _addToCart),
+                ProductGrid(
+                  products: products,
+                  onAddToCart: _addToCart,
+                  onViewDetails: _openProductDetail,
+                ),
               SliverToBoxAdapter(
                 child: HomeFooter(onExplore: _scrollToCatalog),
               ),

@@ -76,6 +76,8 @@ frontend/lib/
   screens/
     home/
       home_page.dart
+    product_detail/
+      product_detail_page.dart
   widgets/
     cart/
       cart_panel.dart
@@ -99,6 +101,11 @@ frontend/lib/
       brand_mark.dart
       cart_nav_button.dart
       premium_announcement_bar.dart
+    product/
+      product_detail_header.dart
+      product_future_accords_placeholder.dart
+      product_info_section.dart
+      product_purchase_panel.dart
 
 frontend/backups/
   main_catalogo_v1_respaldo.dart
@@ -111,13 +118,15 @@ frontend/backups/
 |---|---|---|
 | `main.dart` | Punto de entrada de Flutter. | Arranca `AromasStoreApp` sin contener UI, API, storage ni modelos. |
 | `app/` | Configura la aplicacion y el tema visual existente. | Centraliza `MaterialApp` y conserva colores/tipografia actuales. |
-| `screens/home/` | Contiene la pagina publica actual. | Mantiene hero, catalogo, filtros, carrito y validacion sin crear pantallas nuevas. |
+| `screens/home/` | Contiene la pagina publica actual. | Mantiene hero, catalogo, filtros, carrito y validacion. |
+| `screens/product_detail/` | Contiene el detalle publico de producto. | Muestra informacion real del producto y prepara la futura seccion de acordes. |
 | `config/` | Guarda constantes globales del frontend. | Evita valores sueltos dentro de la interfaz. |
 | `core/utils/` | Contiene funciones pequenas reutilizables. | Reduce duplicacion y prepara modelos limpios. |
 | `data/api/` | Concentra llamadas HTTP al backend. | La UI ya no sabe como se llama a la API. |
 | `data/storage/` | Maneja persistencia local del carrito. | La UI ya no toca directamente `localStorage`. |
 | `models/` | Define las clases de datos usadas por la app. | Facilita mantener el contrato entre API y frontend. |
 | `widgets/` | Agrupa piezas visuales reutilizables por dominio. | Separa layout, catalogo, carrito y estados de carga/error. |
+| `widgets/product/` | Agrupa piezas visuales del detalle de producto. | Evita que la pantalla de detalle concentre toda la composicion. |
 | `frontend/backups/` | Conserva respaldos historicos fuera del codigo activo. | Evita que un respaldo dentro de `lib/` se confunda con la aplicacion vigente. |
 
 ## 6. Archivos Implementados
@@ -176,6 +185,7 @@ Funciones actuales:
 | Funcion | Endpoint usado | Resultado |
 |---|---|---|
 | `loadCatalog()` | `/api/productos`, `/api/categorias`, `/api/marcas` | Carga el catalogo publico. |
+| `loadProductById()` | `/api/productos/:id` | Carga el detalle de un producto. |
 | `validateCart()` | `/api/carrito/validar` | Valida stock, subtotal, IVA y total. |
 
 Beneficio:
