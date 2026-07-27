@@ -124,7 +124,7 @@ class _SkeletonProductCard extends StatelessWidget {
                 _SkeletonBox(width: 210, height: 24),
                 SizedBox(height: 10),
                 _SkeletonBox(width: 130, height: 14),
-                SizedBox(height: 72),
+                SizedBox(height: 24),
                 _SkeletonBox(width: 120, height: 28),
                 SizedBox(height: 16),
                 _SkeletonBox(width: double.infinity, height: 44, radius: 999),

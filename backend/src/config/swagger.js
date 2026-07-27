@@ -20,6 +20,8 @@ const swaggerDefinition = {
     { name: "Autenticacion" },
     { name: "Clientes" },
     { name: "Catalogo" },
+    { name: "Acordes" },
+    { name: "Referencias" },
     { name: "Carrito" },
     { name: "Ventas" },
     { name: "Pagos" },
@@ -178,6 +180,33 @@ const swaggerDefinition = {
           activo: { type: "boolean", example: false },
         },
       },
+      AcordesProductoRequest: {
+        type: "object",
+        required: ["acordes"],
+        properties: {
+          acordes: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              required: ["acordeId", "intensidad"],
+              properties: {
+                acordeId: { type: "integer", example: 14 },
+                intensidad: {
+                  type: "integer",
+                  minimum: 1,
+                  maximum: 100,
+                  example: 100,
+                },
+                copiadoDeReferencia: {
+                  type: "boolean",
+                  example: false,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   },
   paths: {
@@ -296,6 +325,59 @@ const swaggerDefinition = {
         responses: { 200: { description: "Estado actualizado." } },
       },
     },
+    "/api/productos/{id}/acordes": {
+      get: {
+        tags: ["Acordes"],
+        summary: "Consulta la copia editable del perfil aromático",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { 200: { description: "Perfil editable del producto." } },
+      },
+      put: {
+        tags: ["Acordes"],
+        summary: "Guarda y reordena el perfil editable",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AcordesProductoRequest" },
+            },
+          },
+        },
+        responses: { 200: { description: "Perfil guardado y reordenado." } },
+      },
+    },
+    "/api/productos/{id}/restaurar-acordes": {
+      post: {
+        tags: ["Acordes"],
+        summary: "Restaura el perfil desde la referencia maestra",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { 200: { description: "Perfil maestro restaurado." } },
+      },
+    },
     "/api/categorias": {
       get: {
         tags: ["Catalogo"],
@@ -328,6 +410,58 @@ const swaggerDefinition = {
           content: { "application/json": { schema: { $ref: "#/components/schemas/MarcaRequest" } } },
         },
         responses: { 201: { description: "Marca creada." } },
+      },
+    },
+    "/api/marcas/{id}/referencias": {
+      get: {
+        tags: ["Referencias"],
+        summary: "Lista referencias aromáticas de una marca",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { 200: { description: "Referencias activas de la marca." } },
+      },
+    },
+    "/api/acordes": {
+      get: {
+        tags: ["Acordes"],
+        summary: "Lista el catálogo maestro de acordes y colores",
+        responses: { 200: { description: "Catálogo maestro de acordes." } },
+      },
+    },
+    "/api/referencias/{id}": {
+      get: {
+        tags: ["Referencias"],
+        summary: "Consulta una referencia aromática maestra",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { 200: { description: "Referencia encontrada." } },
+      },
+    },
+    "/api/referencias/{id}/acordes": {
+      get: {
+        tags: ["Referencias"],
+        summary: "Consulta el perfil maestro de una referencia",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { 200: { description: "Perfil aromático maestro." } },
       },
     },
     "/api/carrito/validar": {

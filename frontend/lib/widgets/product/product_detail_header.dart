@@ -67,9 +67,11 @@ class _LargeProductImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl != null && imageUrl.isNotEmpty) {
+    final url = imageUrl;
+
+    if (url != null && url.isNotEmpty) {
       return Image.network(
-        imageUrl,
+        url,
         fit: BoxFit.cover,
         semanticLabel: 'Imagen del producto',
         errorBuilder: (context, error, stackTrace) =>

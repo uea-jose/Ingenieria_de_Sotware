@@ -60,6 +60,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           if (snapshot.hasError || !snapshot.hasData) {
             return ErrorView(
               message: 'No pudimos cargar el detalle del producto.',
+              details: snapshot.error?.toString() ?? 'Producto no disponible.',
               onRetry: _reload,
             );
           }

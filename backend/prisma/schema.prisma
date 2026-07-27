@@ -37,6 +37,30 @@ enum TipoPromocion {
   MONTO
 }
 
+enum GeneroPerfume {
+  MASCULINO
+  FEMENINO
+  UNISEX
+}
+
+enum SegmentoReferencia {
+  DISENADOR
+  NICHO
+}
+
+enum EstadoPublicacion {
+  BORRADOR
+  PUBLICADO
+  OCULTO
+}
+
+enum DisponibilidadProducto {
+  DISPONIBLE
+  STOCK_BAJO
+  AGOTADO
+  BAJO_PEDIDO
+}
+
 model Rol {
   id          Int       @id @default(autoincrement())
   nombre      String    @unique @db.VarChar(50)
@@ -91,36 +115,164 @@ model Categoria {
 }
 
 model Marca {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique @db.VarChar(100)
-  paisOrigen  String?    @db.VarChar(80)
-  descripcion String?    @db.VarChar(220)
-  activo      Boolean    @default(true)
+  id          Int                 @id @default(autoincrement())
+  nombre      String              @unique @db.VarChar(100)
+  paisOrigen  String?             @db.VarChar(80)
+  descripcion String?             @db.VarChar(220)
+  activo      Boolean             @default(true)
   productos   Producto[]
+  referencias ReferenciaPerfume[]
 
   @@map("marcas")
 }
 
 model Producto {
-  id          Int     @id @default(autoincrement())
-  nombre      String  @db.VarChar(160)
-  codigo      String  @unique @db.VarChar(80)
-  descripcion String?
-  precio      Decimal @db.Decimal(10, 2)
-  volumenMl   Int?
-  imagenUrl   String? @db.VarChar(500)
-  activo      Boolean @default(true)
-  categoriaId Int
-  marcaId     Int
+  id                             Int                    @id @default(autoincrement())
+  nombre                         String                 @db.VarChar(160)
+  codigo                         String                 @unique @db.VarChar(80)
+  slug                           String?                @unique @db.VarChar(180)
+  descripcionCorta               String?                @db.VarChar(280)
+  descripcion                    String?
+  precio                         Decimal                @db.Decimal(10, 2)
+  volumenMl                      Int?
+  imagenUrl                      String?                @db.VarChar(500)
+  activo                         Boolean                @default(true)
+  estadoPublicacion              EstadoPublicacion      @default(BORRADOR)
+  disponibilidad                 DisponibilidadProducto @default(DISPONIBLE)
+  destacado                      Boolean                @default(false)
+  versionPerfilReferenciaCopiado Int                    @default(1)
+  acordesCopiadosEn              DateTime?
+  categoriaId                    Int
+  marcaId                        Int
+  referenciaId                   Int?
 
-  categoria     Categoria              @relation(fields: [categoriaId], references: [id])
-  marca         Marca                  @relation(fields: [marcaId], references: [id])
-  inventario    Inventario?
-  detalleVentas DetalleVenta[]
-  movimientos   MovimientoInventario[]
-  promociones   Promocion[]
+  categoria      Categoria              @relation(fields: [categoriaId], references: [id])
+  marca          Marca                  @relation(fields: [marcaId], references: [id])
+  referencia     ReferenciaPerfume?     @relation(fields: [referenciaId], references: [id], onDelete: Restrict)
+  inventario     Inventario?
+  detalleVentas  DetalleVenta[]
+  movimientos    MovimientoInventario[]
+  promociones    Promocion[]
+  acordes        ProductoAcorde[]
+  presentaciones PresentacionProducto[]
+  imagenes       ImagenProducto[]
 
+  @@index([referenciaId])
+  @@index([estadoPublicacion, disponibilidad, destacado])
   @@map("productos")
+}
+
+model Acorde {
+  id            Int                       @id @default(autoincrement())
+  nombre        String                    @unique @db.VarChar(100)
+  slug          String                    @unique @db.VarChar(120)
+  colorHex      String                    @db.Char(7)
+  colorTextoHex String                    @default("#111111") @db.Char(7)
+  origenColor   String                    @default("catalogo_maestro") @db.VarChar(80)
+  alias         String[]                  @default([])
+  activo        Boolean                   @default(true)
+  creadoEn      DateTime                  @default(now())
+  actualizadoEn DateTime                  @updatedAt
+  referencias   ReferenciaPerfumeAcorde[]
+  productos     ProductoAcorde[]
+
+  @@map("acordes")
+}
+
+model ReferenciaPerfume {
+  id                  Int                       @id @default(autoincrement())
+  marcaId             Int
+  nombre              String                    @db.VarChar(180)
+  slug                String                    @unique @db.VarChar(180)
+  genero              GeneroPerfume
+  segmento            SegmentoReferencia        @default(DISENADOR)
+  aliasCatalogo       String?                   @db.VarChar(180)
+  catalogoFuente      String?                   @db.VarChar(255)
+  paginaFuente        Int?
+  entradaFuente       Int?
+  versionPerfil       Int                       @default(1)
+  perfilActualizadoEn DateTime                  @default(now())
+  activo              Boolean                   @default(true)
+  creadoEn            DateTime                  @default(now())
+  actualizadoEn       DateTime                  @updatedAt
+  marca               Marca                     @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+  acordes             ReferenciaPerfumeAcorde[]
+  productos           Producto[]
+
+  @@unique([marcaId, nombre])
+  @@index([marcaId, activo, genero])
+  @@map("referencias_perfume")
+}
+
+model ReferenciaPerfumeAcorde {
+  referenciaId  Int
+  acordeId      Int
+  intensidad    Int               @db.SmallInt
+  ordenVisual   Int               @db.SmallInt
+  metodoFuente  String            @default("estimacion_visual_catalogo") @db.VarChar(80)
+  confianza     Decimal           @default(0.75) @db.Decimal(3, 2)
+  creadoEn      DateTime          @default(now())
+  actualizadoEn DateTime          @updatedAt
+  referencia    ReferenciaPerfume @relation(fields: [referenciaId], references: [id], onDelete: Cascade)
+  acorde        Acorde            @relation(fields: [acordeId], references: [id], onDelete: Restrict)
+
+  @@id([referenciaId, acordeId])
+  @@unique([referenciaId, ordenVisual])
+  @@index([acordeId, intensidad])
+  @@map("referencias_perfume_acordes")
+}
+
+model ProductoAcorde {
+  productoId          Int
+  acordeId            Int
+  intensidad          Int      @db.SmallInt
+  ordenVisual         Int      @db.SmallInt
+  copiadoDeReferencia Boolean  @default(true)
+  creadoEn            DateTime @default(now())
+  actualizadoEn       DateTime @updatedAt
+  producto            Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  acorde              Acorde   @relation(fields: [acordeId], references: [id], onDelete: Restrict)
+
+  @@id([productoId, acordeId])
+  @@unique([productoId, ordenVisual])
+  @@index([acordeId, intensidad])
+  @@map("productos_acordes")
+}
+
+model PresentacionProducto {
+  id                Int      @id @default(autoincrement())
+  productoId        Int
+  etiqueta          String   @db.VarChar(120)
+  volumenMl         Decimal? @db.Decimal(7, 2)
+  precio            Decimal  @db.Decimal(12, 2)
+  precioPromocional Decimal? @db.Decimal(12, 2)
+  moneda            String   @default("COP") @db.Char(3)
+  principal         Boolean  @default(false)
+  activo            Boolean  @default(true)
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+  producto          Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, etiqueta])
+  @@index([productoId, activo])
+  @@map("presentaciones_producto")
+}
+
+model ImagenProducto {
+  id               Int      @id @default(autoincrement())
+  productoId       Int
+  rutaStorage      String   @unique @db.VarChar(500)
+  textoAlternativo String   @db.VarChar(240)
+  ordenVisual      Int      @db.SmallInt
+  principal        Boolean  @default(false)
+  activo           Boolean  @default(true)
+  creadoEn         DateTime @default(now())
+  actualizadoEn    DateTime @updatedAt
+  producto         Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, ordenVisual])
+  @@index([productoId, activo, ordenVisual])
+  @@map("imagenes_producto")
 }
 
 model Inventario {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { requiereAutenticacion, requiereRol } from "../auth/auth.middleware.js";
+import { listarReferenciasPorMarca } from "../referencias/referencias.controller.js";
 import {
   actualizarEstadoMarca,
   editarMarca,
@@ -12,6 +13,7 @@ import {
 const router = Router();
 
 router.get("/", listarMarcas);
+router.get("/:marcaId/referencias", listarReferenciasPorMarca);
 router.get("/:id", verMarca);
 router.post(
   "/",
