@@ -23,6 +23,7 @@ docs/
 
 - [FRONTEND_REFACTORIZACION_ESTRUCTURAL.md](frontend/FRONTEND_REFACTORIZACION_ESTRUCTURAL.md): estructura Flutter Web, refactorizacion, HomePage, buscador y diseño.
 - [DISENO_TECNICO_DETALLE_PRODUCTO.md](frontend/DISENO_TECNICO_DETALLE_PRODUCTO.md): diseno tecnico previo para la futura pantalla de detalle de producto.
+- [2026-08-02_DISENO_TECNICO_GESTION_PERFUMES_ACORDES.md](frontend/2026-08-02_DISENO_TECNICO_GESTION_PERFUMES_ACORDES.md): diseno tecnico del molde administrativo para editar perfumes y acordes aromaticos.
 - [MEJORAS_DISENO_FRONTEND_AS040.md](frontend/MEJORAS_DISENO_FRONTEND_AS040.md): mejoras visuales iniciales del catalogo publico.
 - [MEJORAS_CARRITO_FRONTEND_AS044.md](frontend/MEJORAS_CARRITO_FRONTEND_AS044.md): mejoras del carrito web.
 
@@ -42,6 +43,7 @@ Carpeta reservada para decisiones transversales del sistema:
 ## Requerimientos
 
 - [MODULO_ACORDES_Y_SIMILITUD.md](requerimientos/MODULO_ACORDES_Y_SIMILITUD.md): propuesta candidata para acordes aromaticos, perfiles de perfume y busqueda de perfumes similares.
+- [2026-08-02_REQ_GESTION_PERFUMES_ACORDES.md](requerimientos/2026-08-02_REQ_GESTION_PERFUMES_ACORDES.md): requerimiento funcional del modulo interno para registrar perfumes con perfil aromatico editable.
 
 ## UX/UI
 
