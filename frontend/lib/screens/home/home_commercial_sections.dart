@@ -93,6 +93,7 @@ class ProductShowcaseSection extends StatelessWidget {
               : constraints.maxWidth >= 760
               ? 2
               : 1;
+          final compact = columns == 1;
           final width = (constraints.maxWidth - (columns - 1) * 18) / columns;
           return Wrap(
             spacing: 18,
@@ -101,7 +102,7 @@ class ProductShowcaseSection extends StatelessWidget {
               for (final product in visible)
                 SizedBox(
                   width: width,
-                  height: 486,
+                  height: compact ? 526 : 486,
                   child: ProductCard(
                     product: product,
                     onAddToCart: onAddToCart,
@@ -123,11 +124,16 @@ class PromoBannerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 10),
+      padding: EdgeInsets.fromLTRB(sidePadding, 18, sidePadding, 10),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
@@ -336,56 +342,68 @@ class HomeFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.bgLavender,
-      padding: const EdgeInsets.fromLTRB(24, 34, 24, 28),
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(sidePadding, 34, sidePadding, 28),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 760;
-              final callToAction = FilledButton.icon(
-                onPressed: onExplore,
-                icon: const Icon(Icons.arrow_upward),
-                label: const Text('Explorar catalogo'),
-              );
-              final text = Column(
-                crossAxisAlignment: compact
-                    ? CrossAxisAlignment.center
-                    : CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Aromas Store',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 22,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Portada publica preparada para conectar busqueda, promociones y compra real por etapas.',
-                    textAlign: compact ? TextAlign.center : TextAlign.start,
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-              );
-
-              if (compact) {
-                return Column(
-                  children: [text, const SizedBox(height: 18), callToAction],
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+            decoration: BoxDecoration(
+              color: AppColors.bgLavender,
+              borderRadius: BorderRadius.circular(AppRadii.block),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 760;
+                final callToAction = FilledButton.icon(
+                  onPressed: onExplore,
+                  icon: const Icon(Icons.arrow_upward),
+                  label: const Text('Explorar catalogo'),
                 );
-              }
+                final text = Column(
+                  crossAxisAlignment: compact
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Aromas Store',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Portada publica preparada para conectar busqueda, promociones y compra real por etapas.',
+                      textAlign: compact ? TextAlign.center : TextAlign.start,
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ],
+                );
 
-              return Row(
-                children: [
-                  Expanded(child: text),
-                  const SizedBox(width: 18),
-                  callToAction,
-                ],
-              );
-            },
+                if (compact) {
+                  return Column(
+                    children: [text, const SizedBox(height: 18), callToAction],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: text),
+                    const SizedBox(width: 18),
+                    callToAction,
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -406,11 +424,22 @@ class _SectionShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final compact = viewportWidth < 560;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 34, 24, 12),
+      padding: EdgeInsets.fromLTRB(
+        sidePadding,
+        compact ? 28 : 34,
+        sidePadding,
+        12,
+      ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

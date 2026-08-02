@@ -27,6 +27,8 @@ class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
+    final compact = MediaQuery.sizeOf(context).width < 560;
+    final enableHover = !compact;
     final stock = product.inventory?.stock ?? 0;
     final stockLow = stock < 3;
     final hasStock = stock > 0;
@@ -40,12 +42,22 @@ class _ProductCardState extends State<ProductCard> {
         label:
             '${product.name}, marca ${product.brand.name}, precio ${product.price.toStringAsFixed(2)} dolares, $statusText',
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: enableHover
+              ? const Duration(milliseconds: 180)
+              : Duration.zero,
           curve: Curves.easeOut,
-          transform: Matrix4.translationValues(0.0, _hovered ? -4.0 : 0.0, 0.0),
+          transform: Matrix4.translationValues(
+            0.0,
+            enableHover && _hovered ? -4.0 : 0.0,
+            0.0,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.card),
-            boxShadow: _hovered ? AppShadows.hover : AppShadows.base,
+            boxShadow: compact
+                ? AppShadows.mobile
+                : _hovered
+                ? AppShadows.hover
+                : AppShadows.base,
           ),
           child: Card(
             elevation: 0,
@@ -92,7 +104,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(compact ? 14 : 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -106,7 +118,7 @@ class _ProductCardState extends State<ProductCard> {
                             letterSpacing: 0.2,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: compact ? 5 : 6),
                         Text(
                           product.name,
                           maxLines: 2,
@@ -115,9 +127,10 @@ class _ProductCardState extends State<ProductCard> {
                               ?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 height: 1.1,
+                                fontSize: compact ? 20 : null,
                               ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: compact ? 5 : 6),
                         Text(
                           product.category.name,
                           maxLines: 1,
@@ -126,7 +139,7 @@ class _ProductCardState extends State<ProductCard> {
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: compact ? 6 : 8),
                         Text(
                           product.description,
                           maxLines: 2,
@@ -157,7 +170,7 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: compact ? 6 : 8),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: TextButton.icon(
@@ -169,7 +182,7 @@ class _ProductCardState extends State<ProductCard> {
                             label: const Text('Ver detalle'),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: compact ? 6 : 8),
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
@@ -179,6 +192,7 @@ class _ProductCardState extends State<ProductCard> {
                             icon: const Icon(Icons.add_shopping_cart),
                             label: Text(
                               hasStock ? 'Agregar al carrito' : 'Sin stock',
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -204,5 +218,4 @@ class _ProductCardState extends State<ProductCard> {
       ),
     );
   }
-
 }

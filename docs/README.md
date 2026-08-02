@@ -24,6 +24,7 @@ docs/
 - [FRONTEND_REFACTORIZACION_ESTRUCTURAL.md](frontend/FRONTEND_REFACTORIZACION_ESTRUCTURAL.md): estructura Flutter Web, refactorizacion, HomePage, buscador y diseño.
 - [DISENO_TECNICO_DETALLE_PRODUCTO.md](frontend/DISENO_TECNICO_DETALLE_PRODUCTO.md): diseno tecnico previo para la futura pantalla de detalle de producto.
 - [2026-08-02_DISENO_TECNICO_GESTION_PERFUMES_ACORDES.md](frontend/2026-08-02_DISENO_TECNICO_GESTION_PERFUMES_ACORDES.md): diseno tecnico del molde administrativo para editar perfumes y acordes aromaticos.
+- [2026-08-02_AJUSTE_RESPONSIVE_HOME_CONTAINER.md](frontend/2026-08-02_AJUSTE_RESPONSIVE_HOME_CONTAINER.md): ajuste responsive de Home con criterio de contenedor central tipo Bootstrap.
 - [MEJORAS_DISENO_FRONTEND_AS040.md](frontend/MEJORAS_DISENO_FRONTEND_AS040.md): mejoras visuales iniciales del catalogo publico.
 - [MEJORAS_CARRITO_FRONTEND_AS044.md](frontend/MEJORAS_CARRITO_FRONTEND_AS044.md): mejoras del carrito web.
 

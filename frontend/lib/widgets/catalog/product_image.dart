@@ -10,10 +10,12 @@ class ProductImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = imageUrl;
+    final compact = MediaQuery.sizeOf(context).width < 560;
+    final height = compact ? 178.0 : 210.0;
 
     if (url != null && url.isNotEmpty) {
       return SizedBox(
-        height: 210,
+        height: height,
         width: double.infinity,
         child: Image.network(
           url,
@@ -25,10 +27,10 @@ class ProductImage extends StatelessWidget {
       );
     }
 
-    return const SizedBox(
-      height: 210,
+    return SizedBox(
+      height: height,
       width: double.infinity,
-      child: ProductPlaceholder(),
+      child: const ProductPlaceholder(),
     );
   }
 }

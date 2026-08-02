@@ -21,16 +21,21 @@ class TopNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final pagePadding = screenWidth < 560 ? 16.0 : 24.0;
+
     return Container(
       color: AppColors.surface,
       child: Column(
         children: [
           const PremiumAnnouncementBar(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 18, 24, 16),
+            padding: EdgeInsets.fromLTRB(pagePadding, 18, pagePadding, 16),
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1280),
+                constraints: BoxConstraints(
+                  maxWidth: AppLayout.contentMaxWidth(screenWidth),
+                ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final compact = constraints.maxWidth < 760;

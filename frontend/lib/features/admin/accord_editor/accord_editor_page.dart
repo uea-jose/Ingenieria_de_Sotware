@@ -282,9 +282,11 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
   }
 
   Widget _buildLogin() {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(AppLayout.horizontalPadding(viewportWidth)),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
           child: Card(
@@ -348,11 +350,16 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
   }
 
   Widget _buildEditor() {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(sidePadding, 24, sidePadding, 32),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1120),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

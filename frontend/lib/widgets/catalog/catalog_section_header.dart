@@ -14,11 +14,16 @@ class CatalogSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 12),
+      padding: EdgeInsets.fromLTRB(sidePadding, 40, sidePadding, 12),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Row(
             children: [
               Expanded(

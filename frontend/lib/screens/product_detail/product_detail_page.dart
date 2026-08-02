@@ -48,6 +48,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       body: FutureBuilder<Product>(
@@ -79,10 +82,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 22, 24, 12),
+                  padding: EdgeInsets.fromLTRB(
+                    sidePadding,
+                    22,
+                    sidePadding,
+                    12,
+                  ),
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1180),
+                      constraints: BoxConstraints(
+                        maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+                      ),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
@@ -97,10 +107,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                  padding: EdgeInsets.fromLTRB(sidePadding, 0, sidePadding, 32),
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1180),
+                      constraints: BoxConstraints(
+                        maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+                      ),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final compact = constraints.maxWidth < 820;

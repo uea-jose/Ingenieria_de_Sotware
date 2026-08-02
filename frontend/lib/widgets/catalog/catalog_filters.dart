@@ -30,11 +30,16 @@ class CatalogFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 18),
+      padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 18),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Card(
             elevation: 0,
             color: AppColors.surface,
