@@ -123,6 +123,14 @@ export async function obtenerProductos(query = {}) {
 }
 
 function validarProducto(datos, parcial = false) {
+  if (!datos || typeof datos !== "object" || Array.isArray(datos)) {
+    const error = new Error(
+      "El cuerpo de la solicitud debe contener un objeto JSON.",
+    );
+    error.status = 400;
+    throw error;
+  }
+
   const requeridos = ["nombre", "codigo", "precio", "categoriaId", "marcaId"];
 
   if (!parcial) {
@@ -163,6 +171,10 @@ function validarProducto(datos, parcial = false) {
     convertirEntero(datos.marcaId, "marcaId");
   }
 
+  if (datos.referenciaId !== undefined && datos.referenciaId !== null) {
+    convertirEntero(datos.referenciaId, "referenciaId");
+  }
+
   if (datos.stock !== undefined) {
     const stock = convertirEntero(datos.stock, "stock");
 
@@ -187,7 +199,14 @@ function validarProducto(datos, parcial = false) {
 function mapearProductoData(datos) {
   const data = {};
 
-  for (const campo of ["nombre", "codigo", "descripcion", "imagenUrl"]) {
+  for (const campo of [
+    "nombre",
+    "codigo",
+    "slug",
+    "descripcionCorta",
+    "descripcion",
+    "imagenUrl",
+  ]) {
     if (datos[campo] !== undefined) {
       data[campo] = typeof datos[campo] === "string" ? datos[campo].trim() : datos[campo];
     }
@@ -213,10 +232,21 @@ function mapearProductoData(datos) {
     data.marcaId = convertirEntero(datos.marcaId, "marcaId");
   }
 
+  if (datos.referenciaId !== undefined) {
+    data.referenciaId =
+      datos.referenciaId === null
+        ? null
+        : convertirEntero(datos.referenciaId, "referenciaId");
+  }
+
+  if (datos.destacado !== undefined) {
+    data.destacado = convertirBooleano(datos.destacado);
+  }
+
   return data;
 }
 
-async function validarRelaciones({ categoriaId, marcaId }) {
+async function validarRelaciones({ categoriaId, marcaId, referenciaId }) {
   if (categoriaId !== undefined) {
     const categoria = await prisma.categoria.findUnique({ where: { id: categoriaId } });
 
@@ -236,6 +266,61 @@ async function validarRelaciones({ categoriaId, marcaId }) {
       throw error;
     }
   }
+
+  if (referenciaId !== undefined && referenciaId !== null) {
+    const referencia = await prisma.referenciaPerfume.findUnique({
+      where: { id: referenciaId },
+    });
+
+    if (!referencia || !referencia.activo) {
+      const error = new Error(
+        "La referencia indicada no existe o está inactiva.",
+      );
+      error.status = 400;
+      throw error;
+    }
+
+    return referencia;
+  }
+
+  return null;
+}
+
+async function copiarPerfilReferencia(tx, productoId, referencia) {
+  const perfil = await tx.referenciaPerfumeAcorde.findMany({
+    where: { referenciaId: referencia.id },
+    orderBy: { ordenVisual: "asc" },
+  });
+
+  if (perfil.length === 0) {
+    const error = new Error(
+      "La referencia indicada todavía no tiene un perfil aromático.",
+    );
+    error.status = 409;
+    throw error;
+  }
+
+  await tx.productoAcorde.deleteMany({
+    where: { productoId },
+  });
+
+  await tx.productoAcorde.createMany({
+    data: perfil.map((item) => ({
+      productoId,
+      acordeId: item.acordeId,
+      intensidad: item.intensidad,
+      ordenVisual: item.ordenVisual,
+      copiadoDeReferencia: true,
+    })),
+  });
+
+  await tx.producto.update({
+    where: { id: productoId },
+    data: {
+      versionPerfilReferenciaCopiado: referencia.versionPerfil,
+      acordesCopiadosEn: new Date(),
+    },
+  });
 }
 
 export async function obtenerProductoPorId(id) {
@@ -246,6 +331,11 @@ export async function obtenerProductoPorId(id) {
       marca: true,
       categoria: true,
       inventario: true,
+      referencia: {
+        include: {
+          marca: true,
+        },
+      },
     },
   });
 
@@ -262,9 +352,10 @@ export async function crearProducto(datos) {
   validarProducto(datos);
 
   const productoData = mapearProductoData(datos);
-  await validarRelaciones({
+  const referencia = await validarRelaciones({
     categoriaId: productoData.categoriaId,
     marcaId: productoData.marcaId,
+    referenciaId: productoData.referenciaId,
   });
 
   const stock = datos.stock === undefined ? 0 : convertirEntero(datos.stock, "stock");
@@ -272,23 +363,28 @@ export async function crearProducto(datos) {
     datos.stockMinimo === undefined ? 0 : convertirEntero(datos.stockMinimo, "stockMinimo");
 
   try {
-    return await prisma.producto.create({
-      data: {
-        ...productoData,
-        inventario: {
-          create: {
-            stock,
-            stockMinimo,
-            ubicacion: datos.ubicacion?.trim() || "Bodega principal",
+    const productoId = await prisma.$transaction(async (tx) => {
+      const producto = await tx.producto.create({
+        data: {
+          ...productoData,
+          inventario: {
+            create: {
+              stock,
+              stockMinimo,
+              ubicacion: datos.ubicacion?.trim() || "Bodega principal",
+            },
           },
         },
-      },
-      include: {
-        marca: true,
-        categoria: true,
-        inventario: true,
-      },
+      });
+
+      if (referencia) {
+        await copiarPerfilReferencia(tx, producto.id, referencia);
+      }
+
+      return producto.id;
     });
+
+    return obtenerProductoPorId(productoId);
   } catch (error) {
     if (error.code === "P2002") {
       const conflicto = new Error("Ya existe un producto con ese codigo.");
@@ -306,9 +402,22 @@ export async function actualizarProducto(id, datos) {
 
   const productoActual = await obtenerProductoPorId(productoId);
   const productoData = mapearProductoData(datos);
-  await validarRelaciones({
+  if (
+    productoActual.referenciaId &&
+    productoData.referenciaId !== undefined &&
+    productoActual.referenciaId !== productoData.referenciaId
+  ) {
+    const error = new Error(
+      "La referencia maestra de un producto no puede reemplazarse.",
+    );
+    error.status = 409;
+    throw error;
+  }
+
+  const referencia = await validarRelaciones({
     categoriaId: productoData.categoriaId,
-    marcaId: productoData.marcaId,
+    marcaId: productoData.marcaId ?? productoActual.marcaId,
+    referenciaId: productoData.referenciaId,
   });
 
   const inventarioData = {};
@@ -340,13 +449,26 @@ export async function actualizarProducto(id, datos) {
         });
       }
 
-      return tx.producto.update({
+      await tx.producto.update({
         where: { id: productoId },
         data: productoData,
+      });
+
+      if (!productoActual.referenciaId && referencia) {
+        await copiarPerfilReferencia(tx, productoId, referencia);
+      }
+
+      return tx.producto.findUnique({
+        where: { id: productoId },
         include: {
           marca: true,
           categoria: true,
           inventario: true,
+          referencia: {
+            include: {
+              marca: true,
+            },
+          },
         },
       });
     });

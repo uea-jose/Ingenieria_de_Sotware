@@ -5,6 +5,11 @@ import {
   obtenerProductoPorId,
   obtenerProductos,
 } from "./productos.service.js";
+import {
+  guardarAcordesDeProducto,
+  obtenerAcordesDeProducto,
+  restaurarAcordesDeProducto,
+} from "./productos.acordes.service.js";
 
 export async function listarProductos(req, res, next) {
   try {
@@ -62,6 +67,48 @@ export async function actualizarEstadoProducto(req, res, next) {
 
     res.json({
       dato: producto,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verAcordesProducto(req, res, next) {
+  try {
+    const resultado = await obtenerAcordesDeProducto(req.params.id);
+
+    res.json({
+      datos: resultado.acordes,
+      total: resultado.acordes.length,
+      producto: resultado.producto,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function editarAcordesProducto(req, res, next) {
+  try {
+    const resultado = await guardarAcordesDeProducto(req.params.id, req.body);
+
+    res.json({
+      datos: resultado.acordes,
+      total: resultado.acordes.length,
+      producto: resultado.producto,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function restaurarAcordesProducto(req, res, next) {
+  try {
+    const resultado = await restaurarAcordesDeProducto(req.params.id);
+
+    res.json({
+      datos: resultado.acordes,
+      total: resultado.acordes.length,
+      producto: resultado.producto,
     });
   } catch (error) {
     next(error);

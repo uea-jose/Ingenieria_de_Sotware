@@ -78,13 +78,14 @@ CatalogData buildDemoCatalog() {
   );
 }
 
-const demoProducts = [
+const List<Product> demoProducts = [
   Product(
     id: 9901,
     name: 'One Million Elixir',
     code: 'DEMO-PR-001',
     description: 'Fragancia intensa con notas dulces, amaderadas y especiadas.',
     price: 129.99,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -99,6 +100,7 @@ const demoProducts = [
     code: 'DEMO-PR-002',
     description: 'Fragancia fresca y poderosa con matices amaderados.',
     price: 119.99,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -113,6 +115,7 @@ const demoProducts = [
     code: 'DEMO-PR-003',
     description: 'Aroma moderno con lavanda, vainilla y notas amaderadas.',
     price: 109.99,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -127,6 +130,7 @@ const demoProducts = [
     code: 'DEMO-PR-004',
     description: 'Fragancia calida con notas de cuero, ambar y flores blancas.',
     price: 124.99,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -142,6 +146,7 @@ const demoProducts = [
     description:
         'Fragancia fresca de inspiracion marina y citrica para hombre.',
     price: 95.00,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -156,6 +161,7 @@ const demoProducts = [
     code: 'DEMO-GA-002',
     description: 'Aroma elegante con salida citrica y fondo amaderado.',
     price: 110.00,
+    volumeMl: 75,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -170,6 +176,7 @@ const demoProducts = [
     code: 'DEMO-GA-003',
     description: 'Fragancia luminosa para mujer con flores blancas y vainilla.',
     price: 105.00,
+    volumeMl: 90,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -184,6 +191,7 @@ const demoProducts = [
     code: 'DEMO-GA-004',
     description: 'Perfume para mujer con notas frutales y florales.',
     price: 115.00,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -199,6 +207,7 @@ const demoProducts = [
     description:
         'Fragancia para hombre intensa con bergamota y notas especiadas.',
     price: 118.00,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -213,6 +222,7 @@ const demoProducts = [
     code: 'DEMO-CH-001',
     description: 'Aroma unisex amaderado aromatico, limpio y elegante.',
     price: 132.00,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -228,6 +238,7 @@ const demoProducts = [
     description:
         'Fragancia para hombre vibrante con citricos, pimienta y maderas.',
     price: 89.99,
+    volumeMl: 100,
     imageUrl: null,
     active: true,
     categoryId: 901,
@@ -243,6 +254,7 @@ const demoProducts = [
     description:
         'Fragancia para mujer floral ambarada para ocasiones especiales.',
     price: 102.00,
+    volumeMl: 80,
     imageUrl: null,
     active: true,
     categoryId: 902,

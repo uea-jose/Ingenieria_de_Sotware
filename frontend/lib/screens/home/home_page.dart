@@ -618,19 +618,36 @@ class _HomePageState extends State<HomePage> {
               ),
               if (hasBackendError)
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1280),
-                        child: ErrorView(
-                          message: 'Mostrando catalogo de demostracion.',
-                          details:
-                              'El backend no respondio. La portada usa productos simulados locales.',
-                          onRetry: _reloadCatalog,
+                  child: Builder(
+                    builder: (context) {
+                      final viewportWidth = MediaQuery.sizeOf(context).width;
+                      final sidePadding = AppLayout.horizontalPadding(
+                        viewportWidth,
+                      );
+                      return Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          sidePadding,
+                          14,
+                          sidePadding,
+                          0,
                         ),
-                      ),
-                    ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: AppLayout.contentMaxWidth(
+                                viewportWidth,
+                              ),
+                            ),
+                            child: ErrorView(
+                              message: 'Mostrando catalogo de demostracion.',
+                              details:
+                                  'El backend no respondio. La portada usa productos simulados locales.',
+                              onRetry: _reloadCatalog,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               SliverToBoxAdapter(
@@ -778,14 +795,19 @@ class HeroCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 560;
+
     return Container(
       color: AppColors.bgPage,
       child: Column(
         children: [
           SizedBox(
-            height: 430,
+            height: compact ? 368 : 430,
             child: PageView.builder(
               controller: controller,
+              physics: compact
+                  ? const NeverScrollableScrollPhysics()
+                  : const PageScrollPhysics(),
               onPageChanged: onPageChanged,
               itemCount: slides.length,
               itemBuilder: (context, index) {
@@ -796,7 +818,7 @@ class HeroCarousel extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: compact ? 12 : 18),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -815,7 +837,7 @@ class HeroCarousel extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: compact ? 16 : 22),
         ],
       ),
     );
@@ -854,102 +876,119 @@ class HeroSlideView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: slide.colors,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-      ),
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: sidePadding),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 820;
-              return Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: compact ? 28 : 64,
-                  vertical: 36,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: compact ? 1 : 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            slide.eyebrow.toUpperCase(),
-                            style: TextStyle(
-                              color: slide.accentColor,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.1,
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: slide.colors,
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.block),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 820;
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 18 : 64,
+                    vertical: compact ? 22 : 36,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: compact ? 1 : 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              slide.eyebrow.toUpperCase(),
+                              style: TextStyle(
+                                color: slide.accentColor,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            slide.title,
-                            style: Theme.of(context).textTheme.displayMedium
-                                ?.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.02,
+                            const SizedBox(height: 14),
+                            Text(
+                              slide.title,
+                              style: Theme.of(context).textTheme.displayMedium
+                                  ?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w900,
+                                    height: compact ? 1.0 : 1.02,
+                                    fontSize: compact ? 31 : null,
+                                  ),
+                            ),
+                            SizedBox(height: compact ? 12 : 16),
+                            Text(
+                              slide.description,
+                              maxLines: compact ? 2 : null,
+                              overflow: compact
+                                  ? TextOverflow.ellipsis
+                                  : TextOverflow.visible,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: AppColors.textSecondary,
+                                    height: 1.35,
+                                  ),
+                            ),
+                            SizedBox(height: compact ? 18 : 24),
+                            Wrap(
+                              spacing: 14,
+                              runSpacing: 12,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                FilledButton(
+                                  onPressed: onPressed,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: slide.accentColor,
+                                    foregroundColor: AppColors.surface,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: compact ? 18 : 24,
+                                      vertical: compact ? 14 : 18,
+                                    ),
+                                  ),
+                                  child: Text(slide.buttonText),
                                 ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            slide.description,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  height: 1.35,
-                                ),
-                          ),
-                          const SizedBox(height: 24),
-                          Wrap(
-                            spacing: 14,
-                            runSpacing: 12,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              FilledButton(
-                                onPressed: onPressed,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: slide.accentColor,
-                                  foregroundColor: AppColors.surface,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 18,
+                                Text(
+                                  slide.offer,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                child: Text(slide.buttonText),
-                              ),
-                              Text(
-                                slide.offer,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!compact) ...[
+                        const SizedBox(width: 40),
+                        Expanded(
+                          flex: 4,
+                          child: HeroProductMock(
+                            accentColor: slide.accentColor,
                           ),
-                        ],
-                      ),
-                    ),
-                    if (!compact) ...[
-                      const SizedBox(width: 40),
-                      Expanded(
-                        flex: 4,
-                        child: HeroProductMock(accentColor: slide.accentColor),
-                      ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              );
-            },
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -1044,53 +1083,65 @@ class TrustBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.bgLavender,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: 18),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 760;
-              final items = [
-                const TrustItem(
-                  title: 'Catalogo claro',
-                  subtitle: 'productos con precio y stock',
-                  icon: Icons.storefront_outlined,
-                ),
-                const TrustItem(
-                  title: 'Compra segura',
-                  subtitle: 'validacion de carrito',
-                  icon: Icons.verified_user_outlined,
-                ),
-                const TrustItem(
-                  title: 'Stock visible',
-                  subtitle: 'alertas de disponibilidad',
-                  icon: Icons.inventory_2_outlined,
-                ),
-                const TrustItem(
-                  title: 'Promociones',
-                  subtitle: 'descuentos configurables',
-                  icon: Icons.local_offer_outlined,
-                ),
-              ];
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+            decoration: BoxDecoration(
+              color: AppColors.bgLavender,
+              borderRadius: BorderRadius.circular(AppRadii.block),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 760;
+                final items = [
+                  const TrustItem(
+                    title: 'Catalogo claro',
+                    subtitle: 'productos con precio y stock',
+                    icon: Icons.storefront_outlined,
+                  ),
+                  const TrustItem(
+                    title: 'Compra segura',
+                    subtitle: 'validacion de carrito',
+                    icon: Icons.verified_user_outlined,
+                  ),
+                  const TrustItem(
+                    title: 'Stock visible',
+                    subtitle: 'alertas de disponibilidad',
+                    icon: Icons.inventory_2_outlined,
+                  ),
+                  const TrustItem(
+                    title: 'Promociones',
+                    subtitle: 'descuentos configurables',
+                    icon: Icons.local_offer_outlined,
+                  ),
+                ];
 
-              if (compact) {
-                return Column(
-                  children: [
-                    for (final item in items) ...[
-                      item,
-                      if (item != items.last) const SizedBox(height: 10),
+                if (compact) {
+                  return Column(
+                    children: [
+                      for (final item in items) ...[
+                        item,
+                        if (item != items.last) const SizedBox(height: 10),
+                      ],
                     ],
-                  ],
-                );
-              }
+                  );
+                }
 
-              return Row(
-                children: [for (final item in items) Expanded(child: item)],
-              );
-            },
+                return Row(
+                  children: [for (final item in items) Expanded(child: item)],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -1146,6 +1197,9 @@ class FeaturedExperienceStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     final items = const [
       _ExperienceCard(
         icon: Icons.workspace_premium_outlined,
@@ -1171,10 +1225,12 @@ class FeaturedExperienceStrip extends StatelessWidget {
 
     return Container(
       color: AppColors.bgPage,
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 6),
+      padding: EdgeInsets.fromLTRB(sidePadding, 28, sidePadding, 6),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxWidth < 760;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_design_tokens.dart';
 import '../../models/product.dart';
 import 'product_card.dart';
 
@@ -17,20 +18,23 @@ class ProductGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(24, 4, 24, 48),
-      sliver: SliverLayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.crossAxisExtent;
-          final columns = width >= 1180
-              ? 4
-              : width >= 860
-              ? 3
-              : width >= 560
-              ? 2
-              : 1;
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final sideInset = AppLayout.containerSideInset(
+          constraints.crossAxisExtent,
+        );
+        final contentWidth = constraints.crossAxisExtent - (sideInset * 2);
+        final columns = contentWidth >= 960
+            ? 4
+            : contentWidth >= 720
+            ? 3
+            : contentWidth >= 360
+            ? 2
+            : 1;
 
-          return SliverGrid(
+        return SliverPadding(
+          padding: EdgeInsets.fromLTRB(sideInset, 4, sideInset, 48),
+          sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (context, index) => ProductCard(
                 product: products[index],
@@ -41,13 +45,17 @@ class ProductGrid extends StatelessWidget {
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
-              mainAxisSpacing: 18,
-              crossAxisSpacing: 18,
-              mainAxisExtent: 486,
+              mainAxisSpacing: columns == 2 ? 14 : 18,
+              crossAxisSpacing: columns == 2 ? 12 : 18,
+              mainAxisExtent: columns == 1
+                  ? 460
+                  : columns == 2
+                  ? 366
+                  : 384,
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

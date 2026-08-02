@@ -7,6 +7,7 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test:api": "node scripts/api-smoke-test.js",
+    "test:catalogo": "node scripts/catalog-accords-integration-test.js",
     "seed": "node prisma/seed.js",
     "prisma:studio": "prisma studio",
     "prisma:generate": "prisma generate",

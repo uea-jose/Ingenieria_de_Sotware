@@ -229,6 +229,38 @@ Ejemplo:
 }
 ```
 
+### Acordes y referencias aromáticas
+
+| Metodo | Ruta | Descripcion | Seguridad |
+|---|---|---|---|
+| GET | `/api/acordes` | Lista acordes activos con sus colores maestros. | Publico |
+| GET | `/api/marcas/:id/referencias` | Lista referencias aromáticas de una marca. | Publico |
+| GET | `/api/referencias/:id` | Consulta una referencia maestra. | Publico |
+| GET | `/api/referencias/:id/acordes` | Consulta el perfil maestro ordenado. | Publico |
+| GET | `/api/productos/:id/acordes` | Consulta la copia editable del producto. | Publico |
+| PUT | `/api/productos/:id/acordes` | Guarda intensidades y recalcula el orden. | Administrador, Vendedor |
+| POST | `/api/productos/:id/restaurar-acordes` | Restaura la copia desde el perfil maestro. | Administrador, Vendedor |
+
+Ejemplo para guardar el perfil editable:
+
+```json
+{
+  "acordes": [
+    {
+      "acordeId": 14,
+      "intensidad": 100
+    },
+    {
+      "acordeId": 40,
+      "intensidad": 84
+    }
+  ]
+}
+```
+
+El backend ordena por intensidad descendente, conserva el orden recibido en
+caso de empate y genera `ordenVisual` consecutivo desde 1.
+
 ## 10. Endpoints de carrito
 
 | Metodo | Ruta | Descripcion | Seguridad |
@@ -513,7 +545,7 @@ npm run test:api
 Resultado esperado:
 
 ```txt
-Resultado: 18/18 pruebas correctas.
+Resultado: 21/21 pruebas correctas.
 ```
 
 ## 19. Observaciones de mantenimiento

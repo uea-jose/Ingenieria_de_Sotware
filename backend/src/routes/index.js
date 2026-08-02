@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import auditoriaRoutes from "../modules/auditoria/auditoria.routes.js";
+import acordesRoutes from "../modules/acordes/acordes.routes.js";
 import authRoutes from "../modules/auth/auth.routes.js";
 import brandsRoutes from "../modules/brands/brands.routes.js";
 import carritoRoutes from "../modules/carrito/carrito.routes.js";
@@ -12,6 +13,7 @@ import marcasRoutes from "../modules/marcas/marcas.routes.js";
 import pagosRoutes from "../modules/pagos/pagos.routes.js";
 import productsRoutes from "../modules/products/products.routes.js";
 import promocionesRoutes from "../modules/promociones/promociones.routes.js";
+import referenciasRoutes from "../modules/referencias/referencias.routes.js";
 import categoriasRoutes from "../modules/categorias/categorias.routes.js";
 import productosRoutes from "../modules/productos/productos.routes.js";
 import ventasRoutes from "../modules/ventas/ventas.routes.js";
@@ -29,6 +31,9 @@ router.get("/", (req, res) => {
       { metodo: "GET", ruta: "/api/auth/me", descripcion: "Devuelve el usuario autenticado mediante token." },
       { metodo: "GET", ruta: "/api/productos", descripcion: "Lista productos con marca, categoria, inventario y filtros opcionales." },
       { metodo: "GET", ruta: "/api/productos/:id", descripcion: "Consulta un producto por id." },
+      { metodo: "GET", ruta: "/api/productos/:id/acordes", descripcion: "Consulta la copia editable del perfil aromático." },
+      { metodo: "PUT", ruta: "/api/productos/:id/acordes", descripcion: "Guarda y reordena los acordes editables. Requiere Administrador o Vendedor." },
+      { metodo: "POST", ruta: "/api/productos/:id/restaurar-acordes", descripcion: "Restaura los acordes desde la referencia maestra." },
       { metodo: "POST", ruta: "/api/productos", descripcion: "Crea un producto con inventario inicial. Requiere Administrador o Vendedor." },
       { metodo: "PUT", ruta: "/api/productos/:id", descripcion: "Actualiza datos de un producto. Requiere Administrador o Vendedor." },
       { metodo: "PATCH", ruta: "/api/productos/:id/estado", descripcion: "Activa o desactiva un producto. Requiere Administrador o Vendedor." },
@@ -39,9 +44,13 @@ router.get("/", (req, res) => {
       { metodo: "PATCH", ruta: "/api/categorias/:id/estado", descripcion: "Activa o desactiva una categoria. Requiere Administrador o Vendedor." },
       { metodo: "GET", ruta: "/api/marcas", descripcion: "Lista marcas o casas fabricantes." },
       { metodo: "GET", ruta: "/api/marcas/:id", descripcion: "Consulta una marca por ID." },
+      { metodo: "GET", ruta: "/api/marcas/:id/referencias", descripcion: "Lista referencias aromáticas de una marca." },
       { metodo: "POST", ruta: "/api/marcas", descripcion: "Crea una marca. Requiere Administrador o Vendedor." },
       { metodo: "PUT", ruta: "/api/marcas/:id", descripcion: "Actualiza una marca. Requiere Administrador o Vendedor." },
       { metodo: "PATCH", ruta: "/api/marcas/:id/estado", descripcion: "Activa o desactiva una marca. Requiere Administrador o Vendedor." },
+      { metodo: "GET", ruta: "/api/acordes", descripcion: "Lista el catálogo maestro de acordes y colores." },
+      { metodo: "GET", ruta: "/api/referencias/:id", descripcion: "Consulta una referencia aromática maestra." },
+      { metodo: "GET", ruta: "/api/referencias/:id/acordes", descripcion: "Consulta el perfil aromático maestro de una referencia." },
       { metodo: "POST", ruta: "/api/carrito/validar", descripcion: "Valida productos del carrito, calcula totales y alerta stock bajo." },
       { metodo: "POST", ruta: "/api/clientes/registro", descripcion: "Registra un cliente comprador." },
       { metodo: "GET", ruta: "/api/clientes", descripcion: "Lista clientes registrados. Requiere token de Administrador o Vendedor." },
@@ -78,6 +87,7 @@ router.get("/health", (req, res) => {
 });
 
 router.use("/auth", authRoutes);
+router.use("/acordes", acordesRoutes);
 router.use("/auditoria", auditoriaRoutes);
 router.use("/carrito", carritoRoutes);
 router.use("/clientes", clientesRoutes);
@@ -86,6 +96,7 @@ router.use("/inventario", inventarioRoutes);
 router.use("/marcas", marcasRoutes);
 router.use("/pagos", pagosRoutes);
 router.use("/promociones", promocionesRoutes);
+router.use("/referencias", referenciasRoutes);
 router.use("/categorias", categoriasRoutes);
 router.use("/productos", productosRoutes);
 router.use("/ventas", ventasRoutes);

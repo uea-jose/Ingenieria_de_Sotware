@@ -117,6 +117,59 @@ async function main() {
     }
   });
 
+  await check("Catalogo maestro de acordes", async () => {
+    const data = await request("/api/acordes");
+    if (!Array.isArray(data.datos) || data.datos.length < 15) {
+      throw new Error("Acordes no devuelve el catálogo maestro esperado.");
+    }
+
+    if (!data.datos.every((item) => /^#[0-9A-F]{6}$/i.test(item.colorHex))) {
+      throw new Error("Uno o más acordes no tienen un color HEX válido.");
+    }
+  });
+
+  await check("Referencias y perfil maestro", async () => {
+    const marcas = await request("/api/marcas");
+    const armaf = marcas.datos.find((item) => item.nombre === "Armaf");
+
+    if (!armaf) {
+      throw new Error("No se encontró la marca Armaf.");
+    }
+
+    const referencias = await request(
+      `/api/marcas/${armaf.id}/referencias`,
+    );
+    const clubDeNuit = referencias.datos.find(
+      (item) => item.slug === "club-de-nuit-intense",
+    );
+
+    if (!clubDeNuit) {
+      throw new Error("No se encontró la referencia Club de Nuit Intense.");
+    }
+
+    const perfil = await request(
+      `/api/referencias/${clubDeNuit.id}/acordes`,
+    );
+
+    if (!Array.isArray(perfil.datos) || perfil.datos.length === 0) {
+      throw new Error("La referencia no devuelve su perfil maestro.");
+    }
+  });
+
+  await check("Perfil editable de producto", async () => {
+    const productos = await request("/api/productos");
+    const producto = productos.datos[0];
+
+    if (!producto) {
+      throw new Error("No existe un producto para consultar.");
+    }
+
+    const perfil = await request(`/api/productos/${producto.id}/acordes`);
+    if (!Array.isArray(perfil.datos)) {
+      throw new Error("El perfil del producto no devuelve un arreglo.");
+    }
+  });
+
   await check("Promociones", async () => {
     const data = await request("/api/promociones");
     if (!Array.isArray(data.datos)) {

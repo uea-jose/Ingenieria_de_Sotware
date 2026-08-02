@@ -7,6 +7,9 @@ class PremiumAnnouncementBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -20,10 +23,12 @@ class PremiumAnnouncementBar extends StatelessWidget {
           end: Alignment.centerRight,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 9),
+      padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: 9),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Wrap(
             spacing: 18,
             runSpacing: 6,
