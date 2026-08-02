@@ -88,21 +88,28 @@ class ProductShowcaseSection extends StatelessWidget {
       subtitle: subtitle,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columns = constraints.maxWidth >= 1120
+          final columns = constraints.maxWidth >= 960
               ? 4
               : constraints.maxWidth >= 760
+              ? 3
+              : constraints.maxWidth >= 360
               ? 2
               : 1;
           final compact = columns == 1;
-          final width = (constraints.maxWidth - (columns - 1) * 18) / columns;
+          final gap = columns == 2 ? 12.0 : 18.0;
+          final width = (constraints.maxWidth - (columns - 1) * gap) / columns;
           return Wrap(
-            spacing: 18,
-            runSpacing: 18,
+            spacing: gap,
+            runSpacing: columns == 2 ? 14 : 18,
             children: [
               for (final product in visible)
                 SizedBox(
                   width: width,
-                  height: compact ? 526 : 486,
+                  height: compact
+                      ? 460
+                      : columns == 2
+                      ? 366
+                      : 384,
                   child: ProductCard(
                     product: product,
                     onAddToCart: onAddToCart,

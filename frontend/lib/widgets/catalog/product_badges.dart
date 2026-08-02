@@ -6,16 +6,21 @@ class ProductStatusBadge extends StatelessWidget {
   const ProductStatusBadge({
     required this.text,
     required this.warning,
+    this.compact = false,
     super.key,
   });
 
   final String text;
   final bool warning;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 10,
+        vertical: compact ? 4 : 6,
+      ),
       decoration: BoxDecoration(
         color: warning
             ? AppColors.bgPeach
@@ -30,16 +35,16 @@ class ProductStatusBadge extends StatelessWidget {
         children: [
           Icon(
             warning ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-            size: 16,
+            size: compact ? 12 : 14,
             color: warning ? AppColors.warning : AppColors.success,
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: compact ? 3 : 5),
           Text(
             text,
             style: TextStyle(
               color: warning ? AppColors.textPrimary : AppColors.success,
               fontWeight: FontWeight.w900,
-              fontSize: 12,
+              fontSize: compact ? 9.5 : 11,
             ),
           ),
         ],
@@ -53,12 +58,14 @@ class StockBadge extends StatelessWidget {
     required this.stock,
     required this.hasStock,
     required this.stockLow,
+    this.compact = false,
     super.key,
   });
 
   final int stock;
   final bool hasStock;
   final bool stockLow;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +90,10 @@ class StockBadge extends StatelessWidget {
     return Semantics(
       label: text,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 7 : 9,
+          vertical: compact ? 4 : 6,
+        ),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -93,7 +103,7 @@ class StockBadge extends StatelessWidget {
           style: TextStyle(
             color: foreground,
             fontWeight: FontWeight.w900,
-            fontSize: 12,
+            fontSize: compact ? 9.5 : 11,
           ),
         ),
       ),

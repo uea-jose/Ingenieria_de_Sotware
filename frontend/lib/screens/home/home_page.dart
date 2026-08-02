@@ -802,9 +802,12 @@ class HeroCarousel extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: compact ? 330 : 430,
+            height: compact ? 368 : 430,
             child: PageView.builder(
               controller: controller,
+              physics: compact
+                  ? const NeverScrollableScrollPhysics()
+                  : const PageScrollPhysics(),
               onPageChanged: onPageChanged,
               itemCount: slides.length,
               itemBuilder: (context, index) {
@@ -899,8 +902,8 @@ class HeroSlideView extends StatelessWidget {
                 final compact = constraints.maxWidth < 820;
                 return Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 22 : 64,
-                    vertical: compact ? 24 : 36,
+                    horizontal: compact ? 18 : 64,
+                    vertical: compact ? 22 : 36,
                   ),
                   child: Row(
                     children: [
@@ -925,8 +928,8 @@ class HeroSlideView extends StatelessWidget {
                                   ?.copyWith(
                                     color: AppColors.textPrimary,
                                     fontWeight: FontWeight.w900,
-                                    height: 1.02,
-                                    fontSize: compact ? 34 : null,
+                                    height: compact ? 1.0 : 1.02,
+                                    fontSize: compact ? 31 : null,
                                   ),
                             ),
                             SizedBox(height: compact ? 12 : 16),
@@ -953,9 +956,9 @@ class HeroSlideView extends StatelessWidget {
                                   style: FilledButton.styleFrom(
                                     backgroundColor: slide.accentColor,
                                     foregroundColor: AppColors.surface,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 18,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: compact ? 18 : 24,
+                                      vertical: compact ? 14 : 18,
                                     ),
                                   ),
                                   child: Text(slide.buttonText),

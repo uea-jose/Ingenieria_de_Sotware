@@ -18,45 +18,21 @@ class CatalogSectionHeader extends StatelessWidget {
     final sidePadding = AppLayout.horizontalPadding(viewportWidth);
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(sidePadding, 40, sidePadding, 12),
+      padding: EdgeInsets.fromLTRB(sidePadding, 26, sidePadding, 4),
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: AppLayout.contentMaxWidth(viewportWidth),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Catalogo publico',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Encuentra productos por marca, categoria o nombre. El stock se comunica con texto, no solo color.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$visibleProducts de $totalProducts',
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w900,
               ),
-              const SizedBox(width: 18),
-              Text(
-                '$visibleProducts de $totalProducts',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

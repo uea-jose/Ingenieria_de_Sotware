@@ -40,11 +40,11 @@ class AppRadii {
 class AppLayout {
   const AppLayout._();
 
-  static const maxContentWidth = 1320.0;
+  static const maxContentWidth = 1000.0;
 
   static double contentMaxWidth(double viewportWidth) {
-    if (viewportWidth >= 1400) return 1320.0;
-    if (viewportWidth >= 1200) return 1140.0;
+    if (viewportWidth >= 1400) return maxContentWidth;
+    if (viewportWidth >= 1200) return maxContentWidth;
     if (viewportWidth >= 992) return 960.0;
     if (viewportWidth >= 768) return 720.0;
     if (viewportWidth >= 576) return 540.0;
@@ -63,7 +63,7 @@ class AppLayout {
       return basePadding;
     }
 
-    return ((viewportWidth - contentWidth) / 2) + basePadding;
+    return (viewportWidth - contentWidth) / 2;
   }
 }
 
@@ -98,9 +98,9 @@ class AppShadows {
 
   static List<BoxShadow> mobile = [
     BoxShadow(
-      color: const Color(0xFF694C64).withValues(alpha: 0.08),
-      blurRadius: 18,
-      offset: const Offset(0, 6),
+      color: const Color(0xFF694C64).withValues(alpha: 0.05),
+      blurRadius: 8,
+      offset: const Offset(0, 3),
     ),
   ];
 }

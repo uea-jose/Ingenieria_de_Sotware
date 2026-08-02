@@ -28,183 +28,276 @@ class _ProductCardState extends State<ProductCard> {
   Widget build(BuildContext context) {
     final product = widget.product;
     final compact = MediaQuery.sizeOf(context).width < 560;
+    final dense = MediaQuery.sizeOf(context).width >= 900;
     final enableHover = !compact;
     final stock = product.inventory?.stock ?? 0;
     final stockLow = stock < 3;
     final hasStock = stock > 0;
     final statusText = stockLow ? 'Ultimas unidades' : 'Disponible';
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: Semantics(
-        container: true,
-        label:
-            '${product.name}, marca ${product.brand.name}, precio ${product.price.toStringAsFixed(2)} dolares, $statusText',
-        child: AnimatedContainer(
-          duration: enableHover
-              ? const Duration(milliseconds: 180)
-              : Duration.zero,
-          curve: Curves.easeOut,
-          transform: Matrix4.translationValues(
-            0.0,
-            enableHover && _hovered ? -4.0 : 0.0,
-            0.0,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.card),
-            boxShadow: compact
-                ? AppShadows.mobile
-                : _hovered
-                ? AppShadows.hover
-                : AppShadows.base,
-          ),
-          child: Card(
-            elevation: 0,
-            color: AppColors.surface,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              side: BorderSide(
-                color: _hovered ? AppColors.primary : AppColors.borderSoft,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mini = constraints.maxWidth < 220;
+        final tight = mini || dense || constraints.maxWidth < 360;
+
+        return MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: Semantics(
+            container: true,
+            label:
+                '${product.name}, marca ${product.brand.name}, precio ${product.price.toStringAsFixed(2)} dolares, $statusText',
+            child: AnimatedContainer(
+              duration: enableHover
+                  ? const Duration(milliseconds: 180)
+                  : Duration.zero,
+              curve: Curves.easeOut,
+              transform: Matrix4.translationValues(
+                0.0,
+                enableHover && _hovered ? -4.0 : 0.0,
+                0.0,
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    ProductImage(imageUrl: product.imageUrl),
-                    Positioned(
-                      left: 14,
-                      top: 14,
-                      child: ProductStatusBadge(
-                        text: statusText,
-                        warning: stockLow,
-                      ),
-                    ),
-                    Positioned(
-                      right: 12,
-                      top: 12,
-                      child: Material(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          tooltip: 'Guardar en favoritos',
-                          onPressed: () =>
-                              _showFavoriteMessage(context, product),
-                          icon: const Icon(
-                            Icons.favorite_border,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadii.card),
+                boxShadow: compact
+                    ? AppShadows.mobile
+                    : _hovered
+                    ? AppShadows.hover
+                    : AppShadows.base,
+              ),
+              child: Card(
+                elevation: 0,
+                color: AppColors.surface,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  side: BorderSide(
+                    color: _hovered ? AppColors.primary : AppColors.borderSoft,
+                  ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.all(compact ? 14 : 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
                       children: [
-                        Text(
-                          product.brand.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.2,
+                        ProductImage(
+                          imageUrl: product.imageUrl,
+                          compact: tight,
+                        ),
+                        Positioned(
+                          left: dense ? 10 : 14,
+                          top: dense ? 10 : 14,
+                          child: ProductStatusBadge(
+                            text: statusText,
+                            warning: stockLow,
+                            compact: tight,
                           ),
                         ),
-                        SizedBox(height: compact ? 5 : 6),
-                        Text(
-                          product.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                height: 1.1,
-                                fontSize: compact ? 20 : null,
+                        Positioned(
+                          right: dense ? 8 : 12,
+                          top: dense ? 8 : 12,
+                          child: SizedBox.square(
+                            dimension: mini ? 34 : 48,
+                            child: Material(
+                              color: Colors.white.withValues(alpha: 0.92),
+                              shape: const CircleBorder(),
+                              child: IconButton(
+                                tooltip: 'Guardar en favoritos',
+                                padding: EdgeInsets.zero,
+                                onPressed: () =>
+                                    _showFavoriteMessage(context, product),
+                                icon: Icon(
+                                  Icons.favorite_border,
+                                  color: AppColors.primary,
+                                  size: mini ? 20 : 24,
+                                ),
                               ),
-                        ),
-                        SizedBox(height: compact ? 5 : 6),
-                        Text(
-                          product.category.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: compact ? 6 : 8),
-                        Text(
-                          product.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            height: 1.25,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '\$${product.price.toStringAsFixed(2)}',
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.textPrimary,
-                                    ),
-                              ),
-                            ),
-                            StockBadge(
-                              stock: stock,
-                              hasStock: hasStock,
-                              stockLow: stockLow,
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: compact ? 6 : 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: () => widget.onViewDetails(product),
-                            icon: const Icon(
-                              Icons.visibility_outlined,
-                              size: 18,
-                            ),
-                            label: const Text('Ver detalle'),
-                          ),
-                        ),
-                        SizedBox(height: compact ? 6 : 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: hasStock
-                                ? () => widget.onAddToCart(product)
-                                : null,
-                            icon: const Icon(Icons.add_shopping_cart),
-                            label: Text(
-                              hasStock ? 'Agregar al carrito' : 'Sin stock',
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          mini
+                              ? 10
+                              : compact
+                              ? 14
+                              : 12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.brand.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 12,
+                              ),
+                            ),
+                            SizedBox(
+                              height: mini
+                                  ? 3
+                                  : compact
+                                  ? 5
+                                  : 4,
+                            ),
+                            Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.1,
+                                    fontSize: mini
+                                        ? 15
+                                        : compact || tight
+                                        ? 20
+                                        : 18,
+                                  ),
+                            ),
+                            SizedBox(
+                              height: mini
+                                  ? 3
+                                  : compact
+                                  ? 5
+                                  : 4,
+                            ),
+                            Text(
+                              product.category.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: mini ? 11 : null,
+                              ),
+                            ),
+                            SizedBox(
+                              height: mini
+                                  ? 4
+                                  : compact
+                                  ? 6
+                                  : 6,
+                            ),
+                            if (!mini)
+                              Text(
+                                product.description,
+                                maxLines: tight ? 1 : 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  height: 1.25,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            const Spacer(),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '\$${product.price.toStringAsFixed(2)}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.textPrimary,
+                                          fontSize: mini
+                                              ? 17
+                                              : tight
+                                              ? 20
+                                              : compact
+                                              ? null
+                                              : 22,
+                                        ),
+                                  ),
+                                ),
+                                StockBadge(
+                                  stock: stock,
+                                  hasStock: hasStock,
+                                  stockLow: stockLow,
+                                  compact: tight,
+                                ),
+                              ],
+                            ),
+                            SizedBox(
+                              height: mini
+                                  ? 2
+                                  : compact
+                                  ? 6
+                                  : 4,
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size(0, mini ? 30 : 36),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () => widget.onViewDetails(product),
+                                icon: const Icon(
+                                  Icons.visibility_outlined,
+                                  size: 16,
+                                ),
+                                label: Text(mini ? 'Detalle' : 'Ver detalle'),
+                              ),
+                            ),
+                            SizedBox(
+                              height: mini
+                                  ? 4
+                                  : compact
+                                  ? 6
+                                  : 4,
+                            ),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: mini || tight ? 8 : 16,
+                                    vertical: mini || tight ? 10 : 14,
+                                  ),
+                                  minimumSize: Size.fromHeight(
+                                    mini || tight ? 38 : 44,
+                                  ),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: hasStock
+                                    ? () => widget.onAddToCart(product)
+                                    : null,
+                                icon: Icon(
+                                  Icons.add_shopping_cart,
+                                  size: mini || tight ? 18 : 22,
+                                ),
+                                label: Text(
+                                  hasStock
+                                      ? mini
+                                            ? 'Agregar'
+                                            : 'Agregar al carrito'
+                                      : 'Sin stock',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

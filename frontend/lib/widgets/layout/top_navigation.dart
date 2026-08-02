@@ -25,7 +25,7 @@ class TopNavigation extends StatelessWidget {
     final pagePadding = screenWidth < 560 ? 16.0 : 24.0;
 
     return Container(
-      color: AppColors.surface,
+      color: AppColors.bgPage,
       child: Column(
         children: [
           const PremiumAnnouncementBar(),
@@ -36,81 +36,129 @@ class TopNavigation extends StatelessWidget {
                 constraints: BoxConstraints(
                   maxWidth: AppLayout.contentMaxWidth(screenWidth),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 760;
-                    final navActions = Wrap(
-                      spacing: 6,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.end,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _NavButton(
-                          label: 'Inicio',
-                          active: true,
-                          onPressed: () {},
-                        ),
-                        _NavButton(
-                          label: 'Perfumes',
-                          onPressed: onCatalogPressed,
-                        ),
-                        _NavButton(label: 'Mujer', onPressed: onCatalogPressed),
-                        _NavButton(
-                          label: 'Hombre',
-                          onPressed: onCatalogPressed,
-                        ),
-                        _NavButton(
-                          label: 'Unisex',
-                          onPressed: onCatalogPressed,
-                        ),
-                        _NavButton(
-                          label: 'Marcas',
-                          onPressed: onCatalogPressed,
-                        ),
-                        _NavButton(
-                          label: 'Promociones',
-                          onPressed: onCatalogPressed,
-                        ),
-                        IconButton(
-                          tooltip: 'Favoritos visuales',
-                          onPressed: () {},
-                          icon: const Icon(Icons.favorite_border),
-                        ),
-                        CartNavButton(
-                          count: cartCount,
-                          onPressed: onCartPressed,
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.person_outline),
-                          label: const Text('Iniciar sesion'),
-                        ),
-                      ],
-                    );
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadii.block),
+                    border: Border.all(color: AppColors.borderSoft),
+                    boxShadow: AppShadows.base,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(screenWidth < 560 ? 14 : 18),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compact = constraints.maxWidth < 680;
+                        final comfortable = constraints.maxWidth >= 1180;
+                        final navLinks = Wrap(
+                          spacing: 6,
+                          runSpacing: 8,
+                          alignment: compact
+                              ? WrapAlignment.center
+                              : WrapAlignment.start,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _NavButton(
+                              label: 'Inicio',
+                              active: true,
+                              onPressed: () {},
+                            ),
+                            _NavButton(
+                              label: 'Perfumes',
+                              onPressed: onCatalogPressed,
+                            ),
+                            _NavButton(
+                              label: 'Mujer',
+                              onPressed: onCatalogPressed,
+                            ),
+                            _NavButton(
+                              label: 'Hombre',
+                              onPressed: onCatalogPressed,
+                            ),
+                            _NavButton(
+                              label: 'Unisex',
+                              onPressed: onCatalogPressed,
+                            ),
+                            _NavButton(
+                              label: 'Marcas',
+                              onPressed: onCatalogPressed,
+                            ),
+                            _NavButton(
+                              label: 'Promociones',
+                              onPressed: onCatalogPressed,
+                            ),
+                          ],
+                        );
+                        final userActions = Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.end,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            IconButton(
+                              tooltip: 'Favoritos visuales',
+                              onPressed: () {},
+                              icon: const Icon(Icons.favorite_border),
+                            ),
+                            CartNavButton(
+                              count: cartCount,
+                              onPressed: onCartPressed,
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.person_outline),
+                              label: const Text('Iniciar sesion'),
+                            ),
+                          ],
+                        );
 
-                    return Column(
-                      children: [
-                        if (compact) ...[
-                          const BrandMark(),
-                          const SizedBox(height: 14),
-                          navActions,
-                        ] else
-                          Row(
-                            children: [
-                              const BrandMark(),
-                              const Spacer(),
-                              navActions,
+                        return Column(
+                          children: [
+                            if (comfortable)
+                              Row(
+                                children: [
+                                  const BrandMark(),
+                                  const SizedBox(width: 32),
+                                  Expanded(child: navLinks),
+                                  const SizedBox(width: 14),
+                                  userActions,
+                                ],
+                              )
+                            else ...[
+                              if (compact)
+                                Column(
+                                  children: [
+                                    const BrandMark(),
+                                    const SizedBox(height: 12),
+                                    userActions,
+                                  ],
+                                )
+                              else
+                                Row(
+                                  children: [
+                                    const BrandMark(),
+                                    const Spacer(),
+                                    Flexible(child: userActions),
+                                  ],
+                                ),
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: compact
+                                    ? Alignment.center
+                                    : Alignment.centerLeft,
+                                child: navLinks,
+                              ),
                             ],
-                          ),
-                        const SizedBox(height: 18),
-                        Semantics(
-                          textField: true,
-                          label: 'Buscar perfumes, marcas o categorias',
-                          child: searchBox,
-                        ),
-                      ],
-                    );
-                  },
+                            const SizedBox(height: 18),
+                            Semantics(
+                              textField: true,
+                              label: 'Buscar perfumes, marcas o categorias',
+                              child: searchBox,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),

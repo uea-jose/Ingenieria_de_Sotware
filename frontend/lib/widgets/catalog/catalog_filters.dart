@@ -51,96 +51,98 @@ class CatalogFilters extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 760;
-                  final fields = [
-                    Expanded(
-                      flex: 2,
-                      child: TextField(
-                        controller: searchController,
-                        onChanged: onSearchChanged,
-                        decoration: const InputDecoration(
-                          labelText: 'Buscar producto o marca',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: DropdownButtonFormField<int?>(
-                        initialValue: selectedCategoryId,
-                        decoration: const InputDecoration(
-                          labelText: 'Categoria',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text('Todas'),
-                          ),
-                          ...categories.map(
-                            (category) => DropdownMenuItem<int?>(
-                              value: category.id,
-                              child: Text(category.name),
-                            ),
-                          ),
-                        ],
-                        onChanged: onCategoryChanged,
-                      ),
-                    ),
-                    Expanded(
-                      child: DropdownButtonFormField<int?>(
-                        initialValue: selectedBrandId,
-                        decoration: const InputDecoration(
-                          labelText: 'Marca',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text('Todas'),
-                          ),
-                          ...brands.map(
-                            (brand) => DropdownMenuItem<int?>(
-                              value: brand.id,
-                              child: Text(brand.name),
-                            ),
-                          ),
-                        ],
-                        onChanged: onBrandChanged,
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: onClear,
-                      icon: const Icon(Icons.filter_alt_off_outlined),
-                      label: const Text('Limpiar'),
-                    ),
-                  ];
+                  final narrow = constraints.maxWidth < 620;
+                  final medium = constraints.maxWidth < 900;
+                  final gap = narrow ? 10.0 : 12.0;
+                  final searchWidth = narrow
+                      ? constraints.maxWidth
+                      : medium
+                      ? constraints.maxWidth
+                      : 360.0;
+                  final selectWidth = narrow
+                      ? constraints.maxWidth
+                      : medium
+                      ? (constraints.maxWidth - gap) / 2
+                      : 190.0;
+                  final clearWidth = narrow
+                      ? constraints.maxWidth
+                      : medium
+                      ? 150.0
+                      : 118.0;
 
-                  if (compact) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < fields.length; i++) ...[
-                          if (fields[i] is Expanded)
-                            (fields[i] as Expanded).child
-                          else
-                            fields[i],
-                          if (i != fields.length - 1)
-                            const SizedBox(height: 12),
-                        ],
-                      ],
-                    );
-                  }
-
-                  return Row(
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      fields[0],
-                      const SizedBox(width: 12),
-                      fields[1],
-                      const SizedBox(width: 12),
-                      fields[2],
-                      const SizedBox(width: 12),
-                      fields[3],
+                      SizedBox(
+                        width: searchWidth,
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: onSearchChanged,
+                          decoration: const InputDecoration(
+                            labelText: 'Buscar producto o marca',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: selectWidth,
+                        child: DropdownButtonFormField<int?>(
+                          isExpanded: true,
+                          initialValue: selectedCategoryId,
+                          decoration: const InputDecoration(
+                            labelText: 'Categoria',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('Todas'),
+                            ),
+                            ...categories.map(
+                              (category) => DropdownMenuItem<int?>(
+                                value: category.id,
+                                child: Text(category.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: onCategoryChanged,
+                        ),
+                      ),
+                      SizedBox(
+                        width: selectWidth,
+                        child: DropdownButtonFormField<int?>(
+                          isExpanded: true,
+                          initialValue: selectedBrandId,
+                          decoration: const InputDecoration(
+                            labelText: 'Marca',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('Todas'),
+                            ),
+                            ...brands.map(
+                              (brand) => DropdownMenuItem<int?>(
+                                value: brand.id,
+                                child: Text(brand.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: onBrandChanged,
+                        ),
+                      ),
+                      SizedBox(
+                        width: clearWidth,
+                        child: OutlinedButton.icon(
+                          onPressed: onClear,
+                          icon: const Icon(Icons.filter_alt_off_outlined),
+                          label: const Text('Limpiar'),
+                        ),
+                      ),
                     ],
                   );
                 },
