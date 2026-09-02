@@ -111,3 +111,34 @@ http://127.0.0.1:8080
 - Endpoints principales documentados en Swagger.
 - Frontend Flutter Web conectado al catalogo publico.
 - Bitacora de avances organizada por RF y RNF.
+
+## Módulo académico y flujo de trabajo
+
+Sistema:
+Aromas Store
+
+Módulo:
+Catálogo de perfumes, acordes y similitud
+
+Integrantes:
+
+- José Vicente Ávila Romero — Product Owner
+- Roni Melo — Scrum Master
+- Lucía Janet Rodríguez — Developer
+
+Stack:
+
+- Flutter Web y Dart
+- Node.js y Express
+- PostgreSQL y Prisma
+- Docker
+- JWT
+- Swagger
+
+Flujo GitHub Flow:
+
+- `main` conserva la versión estable.
+- Cada cambio se desarrolla en una rama independiente.
+- Los cambios se guardan mediante commits pequeños y claros.
+- Toda rama debe abrir un Pull Request hacia `main`.
+- El Pull Request debe superar el CI antes de fusionarse.
