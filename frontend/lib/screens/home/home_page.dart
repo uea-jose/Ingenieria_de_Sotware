@@ -53,33 +53,37 @@ class _HomePageState extends State<HomePage> {
 
   final _slides = const [
     HeroSlide(
-      eyebrow: 'Fragancias seleccionadas',
-      title: 'Aromas que elevan tu presencia',
+      eyebrow: 'Seleccion premium',
+      title: 'Aromas que dejan huella',
       description:
-          'Explora perfumes, esencias y productos aromaticos con disponibilidad clara y compra sencilla.',
-      offer: 'Catalogo publico',
-      buttonText: 'Ver productos',
-      colors: [AppColors.bgSoftPink, AppColors.bgLavender, AppColors.bgBlue],
+          'Perfumes, esencias y productos aromaticos con lectura clara, stock visible y compra directa.',
+      offer: 'Catalogo seleccionado',
+      buttonText: 'Explorar catalogo',
+      colors: [AppColors.surface, AppColors.surface, AppColors.bgPeach],
       accentColor: AppColors.primary,
     ),
     HeroSlide(
-      eyebrow: 'Promociones vigentes',
-      title: 'Descubre ofertas para renovar tu estilo',
+      eyebrow: 'Promociones editoriales',
+      title: 'Ofertas con presencia y estilo',
       description:
-          'Encuentra productos con descuentos, stock visible y categorias faciles de explorar.',
-      offer: 'Ofertas destacadas',
+          'Encuentra fragancias con descuentos, categorias simples y disponibilidad visible antes de decidir.',
+      offer: 'Ofertas vigentes',
       buttonText: 'Explorar promociones',
-      colors: [AppColors.bgPeach, AppColors.bgSoftPink, AppColors.bgLavender],
+      colors: [
+        AppColors.darkPromo,
+        AppColors.darkPromo,
+        AppColors.primaryHover,
+      ],
       accentColor: AppColors.accentPeach,
     ),
     HeroSlide(
       eyebrow: 'Compra segura',
-      title: 'Una tienda clara, rapida y confiable',
+      title: 'Una experiencia clara y confiable',
       description:
           'Diseno centrado en el usuario: menos friccion, mejor lectura y acciones predecibles.',
-      offer: 'Experiencia simple',
+      offer: 'Compra guiada',
       buttonText: 'Comenzar',
-      colors: [AppColors.bgMint, AppColors.bgBlue, AppColors.bgLavender],
+      colors: [AppColors.surface, AppColors.bgBlue, AppColors.surface],
       accentColor: AppColors.accentMint,
     ),
   ];
@@ -802,7 +806,7 @@ class HeroCarousel extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: compact ? 368 : 430,
+            height: compact ? 410 : 420,
             child: PageView.builder(
               controller: controller,
               physics: compact
@@ -825,8 +829,8 @@ class HeroCarousel extends StatelessWidget {
               for (var i = 0; i < slides.length; i++)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
-                  width: i == currentIndex ? 46 : 24,
-                  height: 8,
+                  width: i == currentIndex ? 42 : 22,
+                  height: 5,
                   margin: const EdgeInsets.symmetric(horizontal: 5),
                   decoration: BoxDecoration(
                     color: i == currentIndex
@@ -878,6 +882,12 @@ class HeroSlideView extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+    final dark = slide.colors.first == AppColors.darkPromo;
+    final titleColor = dark ? AppColors.onDark : AppColors.textPrimary;
+    final bodyColor = dark
+        ? AppColors.onDark.withValues(alpha: 0.82)
+        : AppColors.textSecondary;
+    final offerColor = dark ? AppColors.onDark : AppColors.textPrimary;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: sidePadding),
@@ -895,6 +905,12 @@ class HeroSlideView extends StatelessWidget {
                 end: Alignment.centerRight,
               ),
               borderRadius: BorderRadius.circular(AppRadii.block),
+              border: Border.all(
+                color: dark
+                    ? AppColors.onDark.withValues(alpha: 0.08)
+                    : AppColors.borderSoft,
+              ),
+              boxShadow: AppShadows.base,
             ),
             clipBehavior: Clip.antiAlias,
             child: LayoutBuilder(
@@ -902,8 +918,8 @@ class HeroSlideView extends StatelessWidget {
                 final compact = constraints.maxWidth < 820;
                 return Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 18 : 64,
-                    vertical: compact ? 22 : 36,
+                    horizontal: compact ? 22 : 64,
+                    vertical: compact ? 28 : 36,
                   ),
                   child: Row(
                     children: [
@@ -916,36 +932,35 @@ class HeroSlideView extends StatelessWidget {
                             Text(
                               slide.eyebrow.toUpperCase(),
                               style: TextStyle(
-                                color: slide.accentColor,
+                                color: dark
+                                    ? AppColors.accentPeach
+                                    : slide.accentColor,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.1,
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
                             Text(
                               slide.title,
                               style: Theme.of(context).textTheme.displayMedium
                                   ?.copyWith(
-                                    color: AppColors.textPrimary,
+                                    color: titleColor,
                                     fontWeight: FontWeight.w900,
                                     height: compact ? 1.0 : 1.02,
-                                    fontSize: compact ? 31 : null,
+                                    fontSize: compact ? 34 : null,
                                   ),
                             ),
                             SizedBox(height: compact ? 12 : 16),
                             Text(
                               slide.description,
-                              maxLines: compact ? 2 : null,
+                              maxLines: compact ? 3 : null,
                               overflow: compact
                                   ? TextOverflow.ellipsis
                                   : TextOverflow.visible,
                               style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: AppColors.textSecondary,
-                                    height: 1.35,
-                                  ),
+                                  ?.copyWith(color: bodyColor, height: 1.35),
                             ),
-                            SizedBox(height: compact ? 18 : 24),
+                            SizedBox(height: compact ? 20 : 24),
                             Wrap(
                               spacing: 14,
                               runSpacing: 12,
@@ -958,15 +973,15 @@ class HeroSlideView extends StatelessWidget {
                                     foregroundColor: AppColors.surface,
                                     padding: EdgeInsets.symmetric(
                                       horizontal: compact ? 18 : 24,
-                                      vertical: compact ? 14 : 18,
+                                      vertical: compact ? 12 : 16,
                                     ),
                                   ),
                                   child: Text(slide.buttonText),
                                 ),
                                 Text(
                                   slide.offer,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
+                                  style: TextStyle(
+                                    color: offerColor,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -981,6 +996,7 @@ class HeroSlideView extends StatelessWidget {
                           flex: 4,
                           child: HeroProductMock(
                             accentColor: slide.accentColor,
+                            dark: dark,
                           ),
                         ),
                       ],
@@ -997,9 +1013,14 @@ class HeroSlideView extends StatelessWidget {
 }
 
 class HeroProductMock extends StatelessWidget {
-  const HeroProductMock({required this.accentColor, super.key});
+  const HeroProductMock({
+    required this.accentColor,
+    required this.dark,
+    super.key,
+  });
 
   final Color accentColor;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
@@ -1010,7 +1031,9 @@ class HeroProductMock extends StatelessWidget {
           width: 320,
           height: 320,
           decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.54),
+            color: (dark ? AppColors.onDark : AppColors.surface).withValues(
+              alpha: dark ? 0.08 : 0.58,
+            ),
             shape: BoxShape.circle,
           ),
         ),
@@ -1021,8 +1044,9 @@ class HeroProductMock extends StatelessWidget {
             height: 285,
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadii.block),
+              borderRadius: BorderRadius.circular(AppRadii.card),
               boxShadow: AppShadows.hover,
+              border: Border.all(color: AppColors.borderSoft),
             ),
             child: Column(
               children: [
@@ -1086,62 +1110,63 @@ class TrustBar extends StatelessWidget {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final sidePadding = AppLayout.horizontalPadding(viewportWidth);
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: 18),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border.symmetric(
+          horizontal: BorderSide(color: AppColors.borderSoft),
+        ),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: 14),
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: AppLayout.contentMaxWidth(viewportWidth),
           ),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-            decoration: BoxDecoration(
-              color: AppColors.bgLavender,
-              borderRadius: BorderRadius.circular(AppRadii.block),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 760;
-                final items = [
-                  const TrustItem(
-                    title: 'Catalogo claro',
-                    subtitle: 'productos con precio y stock',
-                    icon: Icons.storefront_outlined,
-                  ),
-                  const TrustItem(
-                    title: 'Compra segura',
-                    subtitle: 'validacion de carrito',
-                    icon: Icons.verified_user_outlined,
-                  ),
-                  const TrustItem(
-                    title: 'Stock visible',
-                    subtitle: 'alertas de disponibilidad',
-                    icon: Icons.inventory_2_outlined,
-                  ),
-                  const TrustItem(
-                    title: 'Promociones',
-                    subtitle: 'descuentos configurables',
-                    icon: Icons.local_offer_outlined,
-                  ),
-                ];
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 760;
+              final items = [
+                const TrustItem(
+                  title: 'Catalogo claro',
+                  subtitle: 'precio y stock visible',
+                  icon: Icons.storefront_outlined,
+                ),
+                const TrustItem(
+                  title: 'Compra segura',
+                  subtitle: 'carrito validado',
+                  icon: Icons.verified_user_outlined,
+                ),
+                const TrustItem(
+                  title: 'IVA Ecuador 15%',
+                  subtitle: 'totales transparentes',
+                  icon: Icons.receipt_long_outlined,
+                ),
+                const TrustItem(
+                  title: 'Promociones',
+                  subtitle: 'descuentos configurables',
+                  icon: Icons.local_offer_outlined,
+                ),
+              ];
 
-                if (compact) {
-                  return Column(
-                    children: [
-                      for (final item in items) ...[
-                        item,
-                        if (item != items.last) const SizedBox(height: 10),
-                      ],
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [for (final item in items) Expanded(child: item)],
+              if (compact) {
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (final item in items)
+                      SizedBox(
+                        width: (constraints.maxWidth - 12) / 2,
+                        child: item,
+                      ),
+                  ],
                 );
-              },
-            ),
+              }
+
+              return Row(
+                children: [for (final item in items) Expanded(child: item)],
+              );
+            },
           ),
         ),
       ),
@@ -1166,7 +1191,7 @@ class TrustItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: AppColors.primary),
+        Icon(icon, color: AppColors.primary, size: 20),
         const SizedBox(width: 10),
         Flexible(
           child: Column(
@@ -1176,13 +1201,19 @@ class TrustItem extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
               ),
               Text(
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),

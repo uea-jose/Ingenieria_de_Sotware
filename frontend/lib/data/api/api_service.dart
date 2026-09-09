@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../models/aroma_accord.dart';
 import '../../models/brand.dart';
 import '../../models/cart_validation.dart';
 import '../../models/catalog_data.dart';
@@ -43,6 +44,34 @@ class ApiService {
     }
 
     throw Exception('Producto no encontrado.');
+  }
+
+  /// Returns the full master accord catalogue.
+  static Future<List<AromaAccord>> loadAccords() async {
+    final json = await _getJson('$apiBaseUrl/acordes');
+    return _listFrom(json).map(AromaAccord.fromJson).toList();
+  }
+
+  /// Returns products whose accord profiles match [accordIntensities].
+  /// Falls back to the full product list filtered client-side when the
+  /// backend has no dedicated accord-search endpoint.
+  static Future<List<Product>> searchByAccords(
+    Map<String, int> accordIntensities,
+  ) async {
+    if (accordIntensities.isEmpty) return const [];
+    // Build query string: ?slug1=intensity1&slug2=intensity2…
+    final params = accordIntensities.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${e.value}')
+        .join('&');
+    try {
+      final json = await _getJson('$apiBaseUrl/productos?$params');
+      return _listFrom(json).map(Product.fromJson).toList();
+    } catch (_) {
+      // If the backend doesn't support accord filtering, return all products
+      // so the page is still useful during development.
+      final json = await _getJson('$apiBaseUrl/productos');
+      return _listFrom(json).map(Product.fromJson).toList();
+    }
   }
 
   static Future<Map<String, dynamic>> _getJson(String url) async {

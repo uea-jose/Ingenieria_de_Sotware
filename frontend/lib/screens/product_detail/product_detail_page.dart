@@ -7,7 +7,7 @@ import '../../widgets/feedback/error_view.dart';
 import '../../widgets/feedback/loading_view.dart';
 import '../../widgets/layout/top_navigation.dart';
 import '../../widgets/product/product_detail_header.dart';
-import '../../widgets/product/product_future_accords_placeholder.dart';
+import '../../widgets/product/accord_profile_panel.dart';
 import '../../widgets/product/product_info_section.dart';
 import '../../widgets/product/product_purchase_panel.dart';
 
@@ -128,7 +128,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               const SizedBox(height: 18),
                               ProductInfoSection(product: product),
                               const SizedBox(height: 18),
-                              const ProductFutureAccordsPlaceholder(),
+                              AccordProfilePanel(productId: product.id),
                             ],
                           );
 

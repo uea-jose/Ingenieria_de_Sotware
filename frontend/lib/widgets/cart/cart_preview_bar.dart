@@ -26,12 +26,17 @@ class CartPreviewBar extends StatelessWidget {
     final total = validation?.total;
     final valid = validation?.valid;
 
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final sidePadding = AppLayout.horizontalPadding(viewportWidth);
+
     return Container(
       color: AppColors.bgPage,
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
+      padding: EdgeInsets.fromLTRB(sidePadding, 18, sidePadding, 8),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
+          constraints: BoxConstraints(
+            maxWidth: AppLayout.contentMaxWidth(viewportWidth),
+          ),
           child: Card(
             elevation: 0,
             color: AppColors.surface,

@@ -18,13 +18,11 @@ class ProductStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 7 : 10,
-        vertical: compact ? 4 : 6,
+        horizontal: compact ? 6 : 9,
+        vertical: compact ? 3 : 5,
       ),
       decoration: BoxDecoration(
-        color: warning
-            ? AppColors.bgPeach
-            : AppColors.surface.withValues(alpha: 0.94),
+        color: warning ? AppColors.bgPeach : AppColors.successSoft,
         borderRadius: BorderRadius.circular(AppRadii.pill),
         border: Border.all(
           color: warning ? AppColors.warning : AppColors.borderSoft,
@@ -38,13 +36,13 @@ class ProductStatusBadge extends StatelessWidget {
             size: compact ? 12 : 14,
             color: warning ? AppColors.warning : AppColors.success,
           ),
-          SizedBox(width: compact ? 3 : 5),
+          SizedBox(width: compact ? 3 : 4),
           Text(
             text,
             style: TextStyle(
               color: warning ? AppColors.textPrimary : AppColors.success,
               fontWeight: FontWeight.w900,
-              fontSize: compact ? 9.5 : 11,
+              fontSize: compact ? 9 : 10.5,
             ),
           ),
         ],
@@ -74,7 +72,7 @@ class StockBadge extends StatelessWidget {
     final String text;
 
     if (!hasStock) {
-      background = const Color(0xFFFFE8EC);
+      background = AppColors.errorSoft;
       foreground = AppColors.error;
       text = 'Agotado';
     } else if (stockLow) {
@@ -91,8 +89,8 @@ class StockBadge extends StatelessWidget {
       label: text,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 7 : 9,
-          vertical: compact ? 4 : 6,
+          horizontal: compact ? 6 : 8,
+          vertical: compact ? 3 : 5,
         ),
         decoration: BoxDecoration(
           color: background,
@@ -103,7 +101,7 @@ class StockBadge extends StatelessWidget {
           style: TextStyle(
             color: foreground,
             fontWeight: FontWeight.w900,
-            fontSize: compact ? 9.5 : 11,
+            fontSize: compact ? 9 : 10.5,
           ),
         ),
       ),

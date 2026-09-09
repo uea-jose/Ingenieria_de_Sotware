@@ -37,7 +37,7 @@ class _ProductCardState extends State<ProductCard> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final mini = constraints.maxWidth < 220;
+        final mini = constraints.maxWidth < 230;
         final tight = mini || dense || constraints.maxWidth < 360;
 
         return MouseRegion(
@@ -121,9 +121,9 @@ class _ProductCardState extends State<ProductCard> {
                       child: Padding(
                         padding: EdgeInsets.all(
                           mini
-                              ? 10
+                              ? 9
                               : compact
-                              ? 14
+                              ? 12
                               : 12,
                         ),
                         child: Column(
@@ -136,7 +136,7 @@ class _ProductCardState extends State<ProductCard> {
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                             ),
                             SizedBox(
@@ -155,9 +155,9 @@ class _ProductCardState extends State<ProductCard> {
                                     fontWeight: FontWeight.w900,
                                     height: 1.1,
                                     fontSize: mini
-                                        ? 15
+                                        ? 14
                                         : compact || tight
-                                        ? 20
+                                        ? 17
                                         : 18,
                                   ),
                             ),
@@ -174,7 +174,7 @@ class _ProductCardState extends State<ProductCard> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: AppColors.textSecondary,
-                                fontSize: mini ? 11 : null,
+                                fontSize: mini ? 10.5 : 12,
                               ),
                             ),
                             SizedBox(
@@ -184,15 +184,15 @@ class _ProductCardState extends State<ProductCard> {
                                   ? 6
                                   : 6,
                             ),
-                            if (!mini)
+                            if (!tight)
                               Text(
                                 product.description,
-                                maxLines: tight ? 1 : 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: AppColors.textSecondary,
                                   height: 1.25,
-                                  fontSize: 13,
+                                  fontSize: 12,
                                 ),
                               ),
                             const Spacer(),
@@ -208,9 +208,9 @@ class _ProductCardState extends State<ProductCard> {
                                           fontWeight: FontWeight.w900,
                                           color: AppColors.textPrimary,
                                           fontSize: mini
-                                              ? 17
+                                              ? 16
                                               : tight
-                                              ? 20
+                                              ? 18
                                               : compact
                                               ? null
                                               : 22,
@@ -237,14 +237,14 @@ class _ProductCardState extends State<ProductCard> {
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
-                                  minimumSize: Size(0, mini ? 30 : 36),
+                                  minimumSize: Size(0, mini ? 24 : 30),
                                   tapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 onPressed: () => widget.onViewDetails(product),
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.visibility_outlined,
-                                  size: 16,
+                                  size: mini ? 13 : 15,
                                 ),
                                 label: Text(mini ? 'Detalle' : 'Ver detalle'),
                               ),
@@ -262,10 +262,10 @@ class _ProductCardState extends State<ProductCard> {
                                 style: FilledButton.styleFrom(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: mini || tight ? 8 : 16,
-                                    vertical: mini || tight ? 10 : 14,
+                                    vertical: mini || tight ? 7 : 11,
                                   ),
                                   minimumSize: Size.fromHeight(
-                                    mini || tight ? 38 : 44,
+                                    mini || tight ? 32 : 40,
                                   ),
                                   tapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
@@ -275,7 +275,7 @@ class _ProductCardState extends State<ProductCard> {
                                     : null,
                                 icon: Icon(
                                   Icons.add_shopping_cart,
-                                  size: mini || tight ? 18 : 22,
+                                  size: mini || tight ? 17 : 20,
                                 ),
                                 label: Text(
                                   hasStock

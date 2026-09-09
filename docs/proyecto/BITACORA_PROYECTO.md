@@ -5,6 +5,17 @@ Materia: Ingenieria de Software
 Stack definido: Flutter Web, Node.js, Express, PostgreSQL, Prisma, Docker, JWT  
 Repositorio local: `C:\Users\Jose\Documents\proyectospERFUMES\aromas-store`
 
+## Actualizacion Reciente - 2026-08-02
+
+| Area | Actividad | Resultado | Evidencia |
+|---|---|---|---|
+| Frontend | Rediseno visual premium de la home publica | Se actualizo la identidad visual, header, hero, beneficios, catalogo, tarjetas de producto, banner y footer sin cambiar logica funcional. | `docs/frontend/2026-08-02_REDISENO_VISUAL_PREMIUM_HOME.md` |
+| Frontend | Ajuste responsive tipo container | Se mantuvo el contenido dentro de un ancho maximo centralizado y se compactaron tarjetas para escritorio, pantalla dividida y movil. | `frontend/lib/app/app_design_tokens.dart`, `frontend/lib/widgets/catalog/product_grid.dart` |
+| Frontend | Correccion preventiva de overflow | Se redujeron alturas, paddings, textos y botones en tarjetas de producto para evitar desbordes visuales en pantallas pequenas. | `frontend/lib/widgets/catalog/product_card.dart`, `frontend/lib/widgets/catalog/product_image.dart` |
+| Frontend | Ajuste cromatico premium | Se reforzo la paleta hacia blanco, negro y rojo vino comercial, reduciendo la presencia pastel dominante. | `docs/frontend/2026-08-02_AJUSTE_CROMATICO_PREMIUM.md` |
+| Frontend | Header publico tipo icon actions | Se unifico Favoritos, Carrito y Cuenta como icon buttons modernos con badge y drawer lateral de login visual. | `docs/frontend/2026-08-02_HEADER_ACCIONES_DERECHA_DRAWER_LOGIN.md` |
+| Verificacion | Analisis estatico | El frontend quedo sin errores de analisis Dart. | `dart analyze`: sin issues |
+
 ## Resumen General
 
 Aromas Store es un sistema web para una empresa ficticia de venta de perfumes y productos aromaticos. El sistema se plantea como una tienda publica para clientes y un panel interno para usuarios administrativos segun rol.

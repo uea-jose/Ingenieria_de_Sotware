@@ -12,7 +12,7 @@ class ProductImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = imageUrl;
     final useCompact = compact || MediaQuery.sizeOf(context).width < 560;
-    final height = useCompact ? 112.0 : 138.0;
+    final height = useCompact ? 88.0 : 122.0;
 
     if (url != null && url.isNotEmpty) {
       return SizedBox(
@@ -20,7 +20,7 @@ class ProductImage extends StatelessWidget {
         width: double.infinity,
         child: Image.network(
           url,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
           semanticLabel: 'Imagen del producto',
           errorBuilder: (context, error, stackTrace) =>
               ProductPlaceholder(compact: useCompact),
@@ -44,26 +44,27 @@ class ProductPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.bgSoftPink, AppColors.bgLavender],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      decoration: BoxDecoration(
+        color: AppColors.bgPage,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.borderSoft.withValues(alpha: 0.7),
+          ),
         ),
       ),
       child: Center(
         child: Container(
-          width: compact ? 62 : 68,
-          height: compact ? 88 : 98,
+          width: compact ? 52 : 62,
+          height: compact ? 72 : 90,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(AppRadii.block),
-            boxShadow: AppShadows.base,
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(color: AppColors.borderSoft),
           ),
           child: Icon(
             Icons.spa_outlined,
             color: AppColors.primary,
-            size: compact ? 30 : 32,
+            size: compact ? 26 : 30,
           ),
         ),
       ),

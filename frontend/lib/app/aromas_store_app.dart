@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../screens/home/home_page.dart';
 import '../features/admin/accord_editor/accord_editor_page.dart';
+import '../screens/accord_search/accord_search_page.dart';
+import '../screens/home/home_page.dart';
 import 'app_theme.dart';
 
 class AromasStoreApp extends StatelessWidget {
@@ -14,7 +15,10 @@ class AromasStoreApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       home: const HomePage(),
-      routes: {'/admin/acordes': (context) => const AccordEditorPage()},
+      routes: {
+        '/admin/acordes': (context) => const AccordEditorPage(),
+        '/acordes': (context) => const AccordSearchPage(),
+      },
     );
   }
 }

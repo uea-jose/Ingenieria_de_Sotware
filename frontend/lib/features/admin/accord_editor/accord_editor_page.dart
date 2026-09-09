@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../app/app_design_tokens.dart';
 import '../../../data/api/catalog_admin_api.dart';
@@ -8,6 +7,7 @@ import '../../../models/aroma_accord.dart';
 import '../../../models/brand.dart';
 import '../../../models/perfume_reference.dart';
 import '../../../models/product.dart';
+import '../../../widgets/product/accord_bar_row.dart';
 import 'accord_sorting.dart';
 
 class AccordEditorPage extends StatefulWidget {
@@ -616,162 +616,45 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: _accords.length * 86,
-              child: Stack(
-                children: [
-                  for (var index = 0; index < _accords.length; index++)
-                    AnimatedPositioned(
-                      key: ValueKey(_accords[index].accord.id),
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      top: index * 86,
-                      left: 0,
-                      right: 0,
-                      height: 76,
-                      child: _AccordRow(
-                        item: _accords[index],
-                        controller:
-                            _valueControllers[_accords[index].accord.id]!,
-                        focusNode: _valueFocusNodes[_accords[index].accord.id]!,
-                        onChanged: (value) =>
-                            _changeIntensity(_accords[index].accord.id, value),
-                        onRemove: () =>
-                            _removeAccord(_accords[index].accord.id),
-                      ),
-                    ),
-                ],
+            const SizedBox(height: 12),
+            // ── Accord list — Fragrantica-style dark panel ────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(AppRadii.block),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AccordRow extends StatelessWidget {
-  const _AccordRow({
-    required this.item,
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-    required this.onRemove,
-  });
-
-  final EditableAccord item;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueChanged<int> onChanged;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _hexColor(item.accord.colorHex);
-    final textColor = _hexColor(item.accord.textColorHex);
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 138,
-              child: Text(
-                item.accord.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-            Expanded(
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  Container(
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E9EF),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: item.intensity / 100,
-                    child: Container(
-                      height: 34,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(
-                        item.accord.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: SizedBox(
+                // 30 px per slot (26 row + 4 gap), minus trailing gap
+                height: _accords.isEmpty ? 0 : _accords.length * 30.0 - 4,
+                child: Stack(
+                  children: [
+                    for (var i = 0; i < _accords.length; i++)
+                      AnimatedPositioned(
+                        key: ValueKey(_accords[i].accord.id),
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        top: i * 30.0,
+                        left: 0,
+                        right: 0,
+                        height: 26,
+                        child: AccordBarRow(
+                          name: _accords[i].accord.name,
+                          colorHex: _accords[i].accord.colorHex,
+                          intensity: _accords[i].intensity,
+                          editMode: true,
+                          onIntensityChanged: (v) =>
+                              _changeIntensity(_accords[i].accord.id, v),
+                          onRemove: () => _removeAccord(_accords[i].accord.id),
                         ),
                       ),
-                    ),
-                  ),
-                  Slider(
-                    value: item.intensity.toDouble(),
-                    min: 1,
-                    max: 100,
-                    divisions: 99,
-                    activeColor: Colors.transparent,
-                    inactiveColor: Colors.transparent,
-                    thumbColor: Theme.of(context).colorScheme.primary,
-                    onChanged: (value) => onChanged(value.round()),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            SizedBox(
-              width: 62,
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                textAlign: TextAlign.center,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(3),
-                ],
-                onSubmitted: (value) {
-                  final parsed = int.tryParse(value);
-                  if (parsed != null) onChanged(parsed.clamp(1, 100));
-                },
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 10,
-                  ),
+                  ],
                 ),
               ),
             ),
-            IconButton(
-              tooltip: 'Eliminar acorde',
-              onPressed: onRemove,
-              icon: const Icon(Icons.close, color: AppColors.error),
-            ),
           ],
         ),
       ),
     );
-  }
-
-  static Color _hexColor(String value) {
-    final normalized = value.replaceFirst('#', '');
-    final parsed = int.tryParse(normalized, radix: 16);
-    return parsed == null ? AppColors.secondary : Color(0xFF000000 | parsed);
   }
 }

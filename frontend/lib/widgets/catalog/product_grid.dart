@@ -24,7 +24,7 @@ class ProductGrid extends StatelessWidget {
           constraints.crossAxisExtent,
         );
         final contentWidth = constraints.crossAxisExtent - (sideInset * 2);
-        final columns = contentWidth >= 960
+        final columns = contentWidth >= 1080
             ? 4
             : contentWidth >= 720
             ? 3
@@ -45,13 +45,13 @@ class ProductGrid extends StatelessWidget {
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
-              mainAxisSpacing: columns == 2 ? 14 : 18,
-              crossAxisSpacing: columns == 2 ? 12 : 18,
+              mainAxisSpacing: columns == 2 ? 14 : 20,
+              crossAxisSpacing: columns == 2 ? 12 : 20,
               mainAxisExtent: columns == 1
-                  ? 460
+                  ? 390
                   : columns == 2
-                  ? 366
-                  : 384,
+                  ? 334
+                  : 348,
             ),
           ),
         );

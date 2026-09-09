@@ -88,7 +88,7 @@ class ProductShowcaseSection extends StatelessWidget {
       subtitle: subtitle,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columns = constraints.maxWidth >= 960
+          final columns = constraints.maxWidth >= 1080
               ? 4
               : constraints.maxWidth >= 760
               ? 3
@@ -96,7 +96,7 @@ class ProductShowcaseSection extends StatelessWidget {
               ? 2
               : 1;
           final compact = columns == 1;
-          final gap = columns == 2 ? 12.0 : 18.0;
+          final gap = columns == 2 ? 12.0 : 20.0;
           final width = (constraints.maxWidth - (columns - 1) * gap) / columns;
           return Wrap(
             spacing: gap,
@@ -106,10 +106,10 @@ class ProductShowcaseSection extends StatelessWidget {
                 SizedBox(
                   width: width,
                   height: compact
-                      ? 460
+                      ? 390
                       : columns == 2
-                      ? 366
-                      : 384,
+                      ? 334
+                      : 348,
                   child: ProductCard(
                     product: product,
                     onAddToCart: onAddToCart,
@@ -144,18 +144,11 @@ class PromoBannerSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  AppColors.bgSoftPink,
-                  AppColors.bgLavender,
-                  AppColors.bgBlue,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppColors.darkPromo,
               borderRadius: BorderRadius.circular(AppRadii.block),
-              border: Border.all(color: AppColors.borderSoft),
-              boxShadow: AppShadows.base,
+              border: Border.all(
+                color: AppColors.onDark.withValues(alpha: 0.08),
+              ),
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -166,7 +159,7 @@ class PromoBannerSection extends StatelessWidget {
                     const Text(
                       'Promocion de temporada',
                       style: TextStyle(
-                        color: AppColors.primaryHover,
+                        color: AppColors.accentPeach,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.4,
                       ),
@@ -176,7 +169,7 @@ class PromoBannerSection extends StatelessWidget {
                       'Fragancias seleccionadas para regalar y descubrir.',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
-                            color: AppColors.textPrimary,
+                            color: AppColors.onDark,
                             fontWeight: FontWeight.w900,
                             height: 1.1,
                           ),
@@ -184,7 +177,7 @@ class PromoBannerSection extends StatelessWidget {
                     const SizedBox(height: 8),
                     const Text(
                       'Simulacion visual preparada para conectar promociones reales mas adelante.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: AppColors.onDark),
                     ),
                   ],
                 );
@@ -193,7 +186,7 @@ class PromoBannerSection extends StatelessWidget {
                   icon: const Icon(Icons.local_offer_outlined),
                   label: const Text('Ver promociones'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.accentPeach,
                     foregroundColor: AppColors.surface,
                   ),
                 );
@@ -363,8 +356,11 @@ class HomeFooter extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
             decoration: BoxDecoration(
-              color: AppColors.bgLavender,
+              color: AppColors.darkPromo,
               borderRadius: BorderRadius.circular(AppRadii.block),
+              border: Border.all(
+                color: AppColors.onDark.withValues(alpha: 0.08),
+              ),
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -382,7 +378,7 @@ class HomeFooter extends StatelessWidget {
                     const Text(
                       'Aromas Store',
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: AppColors.onDark,
                         fontWeight: FontWeight.w900,
                         fontSize: 22,
                       ),
@@ -391,7 +387,9 @@ class HomeFooter extends StatelessWidget {
                     Text(
                       'Portada publica preparada para conectar busqueda, promociones y compra real por etapas.',
                       textAlign: compact ? TextAlign.center : TextAlign.start,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(
+                        color: AppColors.onDark.withValues(alpha: 0.76),
+                      ),
                     ),
                   ],
                 );
@@ -505,7 +503,7 @@ class _CategoryCardState extends State<_CategoryCard> {
               border: Border.all(
                 color: _hovered ? AppColors.primary : AppColors.borderSoft,
               ),
-              boxShadow: _hovered ? AppShadows.hover : AppShadows.base,
+              boxShadow: _hovered ? AppShadows.hover : AppShadows.mobile,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
