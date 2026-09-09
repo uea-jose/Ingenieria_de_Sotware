@@ -34,7 +34,8 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
   Brand? _selectedBrand;
   Product? _selectedProduct;
   PerfumeReference? _selectedReference;
-  AromaAccord? _accordToAdd;
+  final _accordSearchController = TextEditingController();
+  final _libraryScrollController = ScrollController();
   AccordProfile? _productProfile;
   AccordProfile? _referenceProfile;
   bool _busy = false;
@@ -44,6 +45,8 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
 
   @override
   void dispose() {
+    _accordSearchController.dispose();
+    _libraryScrollController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     for (final controller in _valueControllers.values) {
@@ -155,7 +158,6 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
       _accords = normalizeAccordOrder(profile.accords);
       _originalAccords = List.of(_accords);
       _dirty = false;
-      _accordToAdd = null;
     });
   }
 
@@ -202,9 +204,8 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
     });
   }
 
-  void _addAccord() {
-    final accord = _accordToAdd;
-    if (accord == null) return;
+  void _addAccord(AromaAccord accord) {
+    if (_busy || _accords.any((item) => item.accord.id == accord.id)) return;
 
     final item = EditableAccord(
       accord: accord,
@@ -216,7 +217,7 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
 
     setState(() {
       _accords = normalizeAccordOrder([..._accords, item]);
-      _accordToAdd = null;
+
       _dirty = true;
     });
   }
@@ -538,10 +539,6 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
   }
 
   Widget _buildProfileEditor() {
-    final availableAccords = _masterAccords
-        .where((accord) => !_accords.any((item) => item.accord.id == accord.id))
-        .toList();
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -588,73 +585,180 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
               ],
             ),
             const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<AromaAccord>(
-                    key: ValueKey('add-${_accordToAdd?.id}'),
-                    initialValue: _accordToAdd,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Agregar acorde',
-                    ),
-                    items: [
-                      for (final accord in availableAccords)
-                        DropdownMenuItem(
-                          value: accord,
-                          child: Text(accord.name),
-                        ),
-                    ],
-                    onChanged: (value) => setState(() => _accordToAdd = value),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                FilledButton.tonalIcon(
-                  onPressed: _accordToAdd == null ? null : _addAccord,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Añadir'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // ── Accord list — Fragrantica-style dark panel ────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(AppRadii.block),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: SizedBox(
-                // 30 px per slot (26 row + 4 gap), minus trailing gap
-                height: _accords.isEmpty ? 0 : _accords.length * 30.0 - 4,
-                child: Stack(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final library = _buildAccordLibrary();
+                final profile = _buildCurrentProfile();
+                if (constraints.maxWidth < 760) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [library, const SizedBox(height: 16), profile],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (var i = 0; i < _accords.length; i++)
-                      AnimatedPositioned(
-                        key: ValueKey(_accords[i].accord.id),
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        top: i * 30.0,
-                        left: 0,
-                        right: 0,
-                        height: 26,
-                        child: AccordBarRow(
-                          name: _accords[i].accord.name,
-                          colorHex: _accords[i].accord.colorHex,
-                          intensity: _accords[i].intensity,
-                          editMode: true,
-                          onIntensityChanged: (v) =>
-                              _changeIntensity(_accords[i].accord.id, v),
-                          onRemove: () => _removeAccord(_accords[i].accord.id),
-                        ),
-                      ),
+                    SizedBox(width: 300, child: library),
+                    const SizedBox(width: 20),
+                    Expanded(child: profile),
                   ],
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAccordLibrary() {
+    final query = _accordSearchController.text.trim().toLowerCase();
+    final selectedIds = _accords.map((item) => item.accord.id).toSet();
+    final matches = _masterAccords
+        .where(
+          (accord) => [
+            accord.name,
+            accord.slug,
+            ...accord.aliases,
+          ].any((value) => value.toLowerCase().contains(query)),
+        )
+        .toList();
+
+    return Container(
+      key: const ValueKey('accord-library'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(AppRadii.block),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Biblioteca de acordes',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _accordSearchController,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: 'Buscar acorde',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: query.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Limpiar búsqueda',
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(_accordSearchController.clear),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text('${matches.length} resultados · pulsa + para añadir'),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: MediaQuery.sizeOf(context).height < 650 ? 200 : 280,
+            child: matches.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No se encontraron acordes.',
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : Scrollbar(
+                    controller: _libraryScrollController,
+                    thumbVisibility: true,
+                    child: ListView.builder(
+                      controller: _libraryScrollController,
+                      primary: false,
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) {
+                        final accord = matches[index];
+                        final selected = selectedIds.contains(accord.id);
+                        final color = int.tryParse(
+                          accord.colorHex.replaceFirst('#', ''),
+                          radix: 16,
+                        );
+                        return ListTile(
+                          key: ValueKey('library-${accord.id}'),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                          ),
+                          leading: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF000000 | (color ?? 0x888888)),
+                            ),
+                          ),
+                          title: Text(accord.name),
+                          subtitle: selected
+                              ? const Text('En el perfil')
+                              : null,
+                          trailing: Icon(selected ? Icons.check : Icons.add),
+                          enabled: !_busy && !selected,
+                          onTap: _busy || selected
+                              ? null
+                              : () => _addAccord(accord),
+                        );
+                      },
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentProfile() {
+    return Column(
+      key: const ValueKey('accord-current-profile'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Perfil actual', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        const Text('Arrastra las barras para ajustar la intensidad (1–100).'),
+        const SizedBox(height: 12),
+        AbsorbPointer(
+          absorbing: _busy,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(AppRadii.block),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: SizedBox(
+              // 30 px per slot (26 row + 4 gap), minus trailing gap
+              height: _accords.isEmpty ? 0 : _accords.length * 30.0 - 4,
+              child: Stack(
+                children: [
+                  for (var i = 0; i < _accords.length; i++)
+                    AnimatedPositioned(
+                      key: ValueKey(_accords[i].accord.id),
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      top: i * 30.0,
+                      left: 0,
+                      right: 0,
+                      height: 26,
+                      child: AccordBarRow(
+                        name: _accords[i].accord.name,
+                        colorHex: _accords[i].accord.colorHex,
+                        intensity: _accords[i].intensity,
+                        editMode: true,
+                        onIntensityChanged: (v) =>
+                            _changeIntensity(_accords[i].accord.id, v),
+                        onRemove: () => _removeAccord(_accords[i].accord.id),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
