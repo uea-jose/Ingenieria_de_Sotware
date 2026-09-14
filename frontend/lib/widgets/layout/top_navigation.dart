@@ -14,12 +14,18 @@ class TopNavigation extends StatelessWidget {
     required this.cartCount,
     required this.searchBox,
     super.key,
+    this.onGenderSelected,
   });
 
   final VoidCallback onCatalogPressed;
   final VoidCallback onCartPressed;
   final int cartCount;
   final Widget searchBox;
+
+  /// Called when a gender nav button (Mujer/Hombre/Unisex) is pressed.
+  /// Receives MASCULINO/FEMENINO/UNISEX. If null, gender buttons fall back
+  /// to [onCatalogPressed].
+  final void Function(String gender)? onGenderSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +75,10 @@ class TopNavigation extends StatelessWidget {
               ),
             ),
           ),
-          _NavigationBar(onCatalogPressed: onCatalogPressed),
+          _NavigationBar(
+            onCatalogPressed: onCatalogPressed,
+            onGenderSelected: onGenderSelected,
+          ),
         ],
       ),
     );
@@ -234,6 +243,15 @@ class _MobileHeader extends StatelessWidget {
                 ],
               ),
               const Divider(),
+              ListTile(
+                leading: const Icon(Icons.collections_bookmark_outlined),
+                title: const Text('Catálogo de perfumería'),
+                onTap: () {
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  navigator.pushNamed('/catalogo-perfumeria');
+                },
+              ),
               for (final link in links)
                 ListTile(
                   leading: Icon(link.$2),
@@ -252,9 +270,10 @@ class _MobileHeader extends StatelessWidget {
 }
 
 class _NavigationBar extends StatelessWidget {
-  const _NavigationBar({required this.onCatalogPressed});
+  const _NavigationBar({required this.onCatalogPressed, this.onGenderSelected});
 
   final VoidCallback onCatalogPressed;
+  final void Function(String gender)? onGenderSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -274,14 +293,33 @@ class _NavigationBar extends StatelessWidget {
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: sidePadding),
-            child: Row(
+            child: Wrap(
               children: [
                 _NavButton(label: 'Inicio', active: true, onPressed: () {}),
                 _NavButton(label: 'Perfumes', onPressed: onCatalogPressed),
-                _NavButton(label: 'Mujer', onPressed: onCatalogPressed),
-                _NavButton(label: 'Hombre', onPressed: onCatalogPressed),
-                _NavButton(label: 'Unisex', onPressed: onCatalogPressed),
-                _NavButton(label: 'Marcas', onPressed: onCatalogPressed),
+                _NavButton(
+                  label: 'Mujer',
+                  onPressed: () => onGenderSelected == null
+                      ? onCatalogPressed()
+                      : onGenderSelected!('FEMENINO'),
+                ),
+                _NavButton(
+                  label: 'Hombre',
+                  onPressed: () => onGenderSelected == null
+                      ? onCatalogPressed()
+                      : onGenderSelected!('MASCULINO'),
+                ),
+                _NavButton(
+                  label: 'Unisex',
+                  onPressed: () => onGenderSelected == null
+                      ? onCatalogPressed()
+                      : onGenderSelected!('UNISEX'),
+                ),
+                _NavButton(
+                  label: 'Referencias',
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/catalogo-perfumeria'),
+                ),
                 _NavButton(label: 'Promociones', onPressed: onCatalogPressed),
                 _NavButton(
                   label: 'Buscar por acordes',

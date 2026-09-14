@@ -33,7 +33,11 @@ class CartProductRow extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: ProductThumbnail(imageUrl: product.imageUrl),
+            child: ProductThumbnail(
+              imageUrl: product.imageUrl,
+              productName: product.name,
+              brandName: product.brand.name,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

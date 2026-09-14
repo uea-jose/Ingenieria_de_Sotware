@@ -1,4 +1,5 @@
 import prisma from "../../config/prisma.js";
+import { guardarPerfilEnTransaccion } from "./productos.acordes.service.js";
 
 function convertirEntero(valor, nombreCampo) {
   if (valor === undefined || valor === null || valor === "") {
@@ -123,6 +124,11 @@ export async function obtenerProductos(query = {}) {
 }
 
 function validarProducto(datos, parcial = false) {
+  if (datos?.acordes !== undefined && !Array.isArray(datos.acordes)) {
+    const error = new Error("acordes debe ser una lista.");
+    error.status = 400;
+    throw error;
+  }
   if (!datos || typeof datos !== "object" || Array.isArray(datos)) {
     const error = new Error(
       "El cuerpo de la solicitud debe contener un objeto JSON.",
@@ -241,6 +247,21 @@ function mapearProductoData(datos) {
 
   if (datos.destacado !== undefined) {
     data.destacado = convertirBooleano(datos.destacado);
+  }
+
+  if (datos.genero !== undefined && datos.genero !== null) {
+    const generosValidos = ["MASCULINO", "FEMENINO", "UNISEX"];
+    const genero = String(datos.genero).trim().toUpperCase();
+
+    if (!generosValidos.includes(genero)) {
+      const error = new Error(
+        "genero debe ser MASCULINO, FEMENINO o UNISEX.",
+      );
+      error.status = 400;
+      throw error;
+    }
+
+    data.genero = genero;
   }
 
   return data;
@@ -381,6 +402,10 @@ export async function crearProducto(datos) {
         await copiarPerfilReferencia(tx, producto.id, referencia);
       }
 
+      if (datos.acordes !== undefined) {
+        await guardarPerfilEnTransaccion(tx, producto.id, datos.acordes);
+      }
+
       return producto.id;
     });
 
@@ -456,6 +481,10 @@ export async function actualizarProducto(id, datos) {
 
       if (!productoActual.referenciaId && referencia) {
         await copiarPerfilReferencia(tx, productoId, referencia);
+      }
+
+      if (datos.acordes !== undefined) {
+        await guardarPerfilEnTransaccion(tx, productoId, datos.acordes);
       }
 
       return tx.producto.findUnique({

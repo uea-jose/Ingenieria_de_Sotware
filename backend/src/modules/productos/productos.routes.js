@@ -20,31 +20,31 @@ router.get("/:id", verProducto);
 router.put(
   "/:id/acordes",
   requiereAutenticacion,
-  requiereRol("Administrador", "Vendedor"),
+  requiereRol("Administrador", "Vendedor", "Bodeguero"),
   editarAcordesProducto,
 );
 router.post(
   "/:id/restaurar-acordes",
   requiereAutenticacion,
-  requiereRol("Administrador", "Vendedor"),
+  requiereRol("Administrador", "Vendedor", "Bodeguero"),
   restaurarAcordesProducto,
 );
 router.post(
   "/",
   requiereAutenticacion,
-  requiereRol("Administrador", "Vendedor"),
+  requiereRol("Administrador", "Vendedor", "Bodeguero"),
   registrarProducto,
 );
 router.put(
   "/:id",
   requiereAutenticacion,
-  requiereRol("Administrador", "Vendedor"),
+  requiereRol("Administrador", "Vendedor", "Bodeguero"),
   editarProducto,
 );
 router.patch(
   "/:id/estado",
   requiereAutenticacion,
-  requiereRol("Administrador", "Vendedor"),
+  requiereRol("Administrador", "Vendedor", "Bodeguero"),
   actualizarEstadoProducto,
 );
 

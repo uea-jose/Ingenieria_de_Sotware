@@ -9,16 +9,22 @@ import '../../../models/perfume_reference.dart';
 import '../../../models/product.dart';
 import '../../../widgets/product/accord_bar_row.dart';
 import 'accord_sorting.dart';
+import 'product_form.dart';
+import '../../../models/catalog_reference.dart';
+import '../../../screens/perfumery_catalog/perfumery_catalog_page.dart';
+import '../../../widgets/product/aromatic_preview.dart';
 
 class AccordEditorPage extends StatefulWidget {
-  const AccordEditorPage({super.key});
+  const AccordEditorPage({super.key, this.api});
+
+  final CatalogAdminApi? api;
 
   @override
   State<AccordEditorPage> createState() => _AccordEditorPageState();
 }
 
 class _AccordEditorPageState extends State<AccordEditorPage> {
-  final _api = CatalogAdminApi();
+  late final _api = widget.api ?? CatalogAdminApi();
   final _emailController = TextEditingController(text: 'admin@aromasstore.com');
   final _passwordController = TextEditingController();
   final _valueControllers = <int, TextEditingController>{};
@@ -31,6 +37,7 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
   List<EditableAccord> _accords = const [];
   List<EditableAccord> _originalAccords = const [];
 
+  CatalogReference? _catalogReference;
   Brand? _selectedBrand;
   Product? _selectedProduct;
   PerfumeReference? _selectedReference;
@@ -158,7 +165,153 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
       _accords = normalizeAccordOrder(profile.accords);
       _originalAccords = List.of(_accords);
       _dirty = false;
+      _catalogReference = null;
     });
+  }
+
+  Future<void> _browseCatalog() async {
+    final reference = await Navigator.of(context).push<CatalogReference>(
+      MaterialPageRoute(
+        builder: (_) => const PerfumeryCatalogPage(selectReference: true),
+      ),
+    );
+    if (reference != null && mounted) {
+      setState(() => _catalogReference = reference);
+    }
+  }
+
+  Future<void> _editProduct({bool create = false}) async {
+    if (_busy) return;
+    final reference = _catalogReference;
+    await _run(() async {
+      final categories = await _api.loadCategories();
+      if (!mounted) return;
+      final matchingBrands = _brands.where(
+        (brand) =>
+            normalizeCatalogText(brand.name) ==
+            normalizeCatalogText(reference?.brand ?? ''),
+      );
+      final saved = await showDialog<Product>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => ProductForm(
+          api: _api,
+          brands: _brands,
+          categories: categories,
+          product: create ? null : _selectedProduct,
+          initialName: reference?.alias.isNotEmpty == true
+              ? reference!.alias
+              : reference?.name ?? '',
+          initialBrand: matchingBrands.isEmpty ? null : matchingBrands.first.id,
+        ),
+      );
+      if (saved == null || !mounted) return;
+      setState(() {
+        _products = [..._products.where((p) => p.id != saved.id), saved]
+          ..sort((a, b) => a.name.compareTo(b.name));
+        _selectedProduct = saved;
+      });
+      // Keep a profile draft when only the commercial fields were edited.
+      if (create) {
+        final profile = await _api.loadProductProfile(saved.id);
+        if (!mounted) return;
+        _replaceProfile(profile);
+        if (mounted) setState(() => _catalogReference = reference);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Producto guardado.')));
+      }
+    });
+  }
+
+  void _applyCatalogProfile() {
+    final reference = _catalogReference;
+    if (_busy ||
+        reference == null ||
+        _selectedProduct == null ||
+        _productProfile == null) {
+      return;
+    }
+    try {
+      final profile = reference.resolveProfile(_masterAccords);
+      setState(() {
+        _accords = normalizeAccordOrder(profile);
+        _dirty = true;
+        _error = null;
+      });
+    } on FormatException catch (error) {
+      setState(() => _error = error.message);
+    }
+  }
+
+  Widget _buildPreview() => AromaticPreview(
+    name: _selectedProduct?.name ?? 'Selecciona un producto',
+    brand:
+        _selectedProduct?.brand.name ??
+        'El perfil se verá aquí mientras lo editas.',
+    imageUrl: _productProfile?.imageUrl.isNotEmpty == true
+        ? _productProfile!.imageUrl
+        : _selectedProduct?.imageUrl,
+    accords: _accords,
+    caption: _dirty ? 'Vista previa · cambios sin guardar' : null,
+  );
+
+  Widget _buildCatalogReference() {
+    final reference = _catalogReference!;
+    return Card(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderSoft),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Referencia consultada',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 150,
+              child: Image.asset(reference.imageAsset, fit: BoxFit.contain),
+            ),
+            const SizedBox(height: 8),
+            Text('${reference.name} · ${reference.brand}'),
+            if (reference.alias.isNotEmpty)
+              Text('Nombre del catálogo: ${reference.alias}'),
+            const SizedBox(height: 8),
+            Text(
+              reference.approved
+                  ? 'Puedes usar sus acordes como punto de partida y ajustarlos antes de guardar.'
+                  : 'Perfil pendiente de revisión. Puedes consultar la imagen y crear tus propios acordes.',
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonal(
+                  onPressed:
+                      !_busy && reference.approved && _productProfile != null
+                      ? _applyCatalogProfile
+                      : null,
+                  child: const Text('Usar acordes en el borrador'),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _catalogReference = null),
+                  child: const Text('Cerrar referencia'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _copyReference() {
@@ -217,7 +370,6 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
 
     setState(() {
       _accords = normalizeAccordOrder([..._accords, item]);
-
       _dirty = true;
     });
   }
@@ -365,6 +517,16 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildSelectors(),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _browseCatalog,
+                  icon: const Icon(Icons.collections_bookmark_outlined),
+                  label: const Text('Explorar catálogo de perfumería'),
+                ),
+              ),
+              if (_catalogReference != null) _buildCatalogReference(),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 MaterialBanner(
@@ -378,10 +540,32 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
                 ),
               ],
               const SizedBox(height: 20),
-              if (_accords.isEmpty)
-                _buildEmptyState()
-              else
-                _buildProfileEditor(),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final editor =
+                      _selectedProduct == null || _productProfile == null
+                      ? _buildEmptyState()
+                      : _buildProfileEditor();
+                  if (constraints.maxWidth < 1100) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildPreview(),
+                        const SizedBox(height: 16),
+                        editor,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 260, child: _buildPreview()),
+                      const SizedBox(width: 16),
+                      Expanded(child: editor),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -391,6 +575,11 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
 
   Widget _buildSelectors() {
     return Card(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderSoft),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -399,6 +588,27 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
             Text(
               'Producto y referencia maestra',
               style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: _busy || _dirty
+                      ? null
+                      : () => _editProduct(create: true),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Ingresar perfume'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _busy || _selectedProduct == null
+                      ? null
+                      : () => _editProduct(),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Editar datos del perfume'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             LayoutBuilder(
@@ -514,6 +724,11 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
 
   Widget _buildEmptyState() {
     return Card(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderSoft),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -540,6 +755,11 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
 
   Widget _buildProfileEditor() {
     return Card(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderSoft),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -578,7 +798,7 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
                     FilledButton.icon(
                       onPressed: _busy || !_dirty ? null : _save,
                       icon: const Icon(Icons.save_outlined),
-                      label: const Text('Guardar'),
+                      label: const Text('Guardar perfil'),
                     ),
                   ],
                 ),
@@ -589,7 +809,7 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
               builder: (context, constraints) {
                 final library = _buildAccordLibrary();
                 final profile = _buildCurrentProfile();
-                if (constraints.maxWidth < 760) {
+                if (constraints.maxWidth < 640) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [library, const SizedBox(height: 16), profile],
@@ -598,7 +818,10 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(width: 300, child: library),
+                    SizedBox(
+                      width: constraints.maxWidth < 850 ? 250 : 300,
+                      child: library,
+                    ),
                     const SizedBox(width: 20),
                     Expanded(child: profile),
                   ],
@@ -719,7 +942,7 @@ class _AccordEditorPageState extends State<AccordEditorPage> {
       children: [
         Text('Perfil actual', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
-        const Text('Arrastra las barras para ajustar la intensidad (1–100).'),
+        const Text('Arrastra las barras hasta conseguir el aroma que buscas.'),
         const SizedBox(height: 12),
         AbsorbPointer(
           absorbing: _busy,

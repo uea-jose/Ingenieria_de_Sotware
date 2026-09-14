@@ -5,11 +5,10 @@ import 'package:flutter/services.dart';
 
 import '../../app/app_design_tokens.dart';
 import '../../data/api/api_service.dart';
+import '../../data/catalog/catalog_image_resolver.dart';
 import '../../data/storage/cart_storage.dart';
-import '../../models/brand.dart';
 import '../../models/cart_validation.dart';
 import '../../models/catalog_data.dart';
-import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../widgets/catalog/catalog_filters.dart';
 import '../../widgets/catalog/catalog_section_header.dart';
@@ -43,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   int _highlightedSuggestion = 0;
   int? _selectedCategoryId;
   int? _selectedBrandId;
+  String? _selectedGender; // MASCULINO | FEMENINO | UNISEX | null (todos)
   String _searchText = '';
   List<String> _suggestionTerms = const [];
   List<Product> _searchSuggestions = const [];
@@ -59,8 +59,9 @@ class _HomePageState extends State<HomePage> {
           'Perfumes, esencias y productos aromaticos con lectura clara, stock visible y compra directa.',
       offer: 'Catalogo seleccionado',
       buttonText: 'Explorar catalogo',
-      colors: [AppColors.surface, AppColors.surface, AppColors.bgPeach],
-      accentColor: AppColors.primary,
+      colors: [AppColors.darkPromo, AppColors.darkPromo, AppColors.darkPromo],
+      accentColor: AppColors.accentPeach,
+      imagePath: 'assets/Carrusel/Bleu_de_Chanel_LExclusif.jpg',
     ),
     HeroSlide(
       eyebrow: 'Promociones editoriales',
@@ -69,12 +70,9 @@ class _HomePageState extends State<HomePage> {
           'Encuentra fragancias con descuentos, categorias simples y disponibilidad visible antes de decidir.',
       offer: 'Ofertas vigentes',
       buttonText: 'Explorar promociones',
-      colors: [
-        AppColors.darkPromo,
-        AppColors.darkPromo,
-        AppColors.primaryHover,
-      ],
+      colors: [AppColors.darkPromo, AppColors.darkPromo, AppColors.darkPromo],
       accentColor: AppColors.accentPeach,
+      imagePath: 'assets/Carrusel/LaBomba-Frag-Women.jpg',
     ),
     HeroSlide(
       eyebrow: 'Compra segura',
@@ -83,8 +81,9 @@ class _HomePageState extends State<HomePage> {
           'Diseno centrado en el usuario: menos friccion, mejor lectura y acciones predecibles.',
       offer: 'Compra guiada',
       buttonText: 'Comenzar',
-      colors: [AppColors.surface, AppColors.bgBlue, AppColors.surface],
+      colors: [AppColors.darkPromo, AppColors.darkPromo, AppColors.darkPromo],
       accentColor: AppColors.accentMint,
+      imagePath: 'assets/Carrusel/men-fragrances-PLP.jpg',
     ),
   ];
 
@@ -92,6 +91,11 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _catalogFuture = ApiService.loadCatalog();
+    // Warm up the reference catalog so products without an own image can
+    // fall back to a real perfume photo by name/brand match.
+    CatalogImageResolver.instance.ensureLoaded().then((_) {
+      if (mounted) setState(() {});
+    });
     _restoreCart();
     _catalogFuture.then((_) {
       if (mounted && _cartQuantities.isNotEmpty) {
@@ -373,31 +377,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   CatalogData _catalogForDisplay(CatalogData data) {
-    final demo = buildDemoCatalog();
-    if (data.products.isEmpty) return demo;
-
-    if (data.products.length >= 8) return data;
-
-    return CatalogData(
-      products: _mergeProducts(data.products, demo.products),
-      categories: _mergeCategories(data.categories, demo.categories),
-      brands: _mergeBrands(data.brands, demo.brands),
-    );
-  }
-
-  List<Product> _mergeProducts(List<Product> real, List<Product> demo) {
-    final ids = real.map((product) => product.id).toSet();
-    return [...real, ...demo.where((product) => !ids.contains(product.id))];
-  }
-
-  List<Category> _mergeCategories(List<Category> real, List<Category> demo) {
-    final ids = real.map((category) => category.id).toSet();
-    return [...real, ...demo.where((category) => !ids.contains(category.id))];
-  }
-
-  List<Brand> _mergeBrands(List<Brand> real, List<Brand> demo) {
-    final ids = real.map((brand) => brand.id).toSet();
-    return [...real, ...demo.where((brand) => !ids.contains(brand.id))];
+    // Show only the real products from the backend. The demo catalog is used
+    // ONLY as a fallback when the backend returned nothing (empty/offline),
+    // so the storefront never looks broken but also never mixes fake products
+    // with the real ones.
+    if (data.products.isEmpty) return buildDemoCatalog();
+    return data;
   }
 
   void _handleSearchChanged(String value, List<Product> products) {
@@ -569,6 +554,20 @@ class _HomePageState extends State<HomePage> {
     _scrollToCatalog();
   }
 
+  /// Filters the catalog by gender from the top-nav buttons.
+  /// [gender] is MASCULINO/FEMENINO/UNISEX, or null to clear the gender filter.
+  void _applyGenderFilter(String? gender) {
+    setState(() {
+      _selectedGender = gender;
+      // Clear text search so the gender view isn't narrowed unexpectedly.
+      _searchController.clear();
+      _searchText = '';
+      _searchSuggestions = const [];
+      _suggestionTerms = const [];
+    });
+    _scrollToCatalog();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -593,6 +592,7 @@ class _HomePageState extends State<HomePage> {
               SliverToBoxAdapter(
                 child: TopNavigation(
                   onCatalogPressed: _scrollToCatalog,
+                  onGenderSelected: _applyGenderFilter,
                   onCartPressed: () => _openCartPanel(data.products),
                   cartCount: _cartCount,
                   searchBox: HomeSearchBox(
@@ -775,8 +775,14 @@ class _HomePageState extends State<HomePage> {
           product.categoryId == _selectedCategoryId;
       final matchesBrand =
           _selectedBrandId == null || product.brandId == _selectedBrandId;
+      final matchesGender =
+          _selectedGender == null || product.gender == _selectedGender;
 
-      return product.active && matchesSearch && matchesCategory && matchesBrand;
+      return product.active &&
+          matchesSearch &&
+          matchesCategory &&
+          matchesBrand &&
+          matchesGender;
     }).toList();
   }
 }
@@ -857,6 +863,7 @@ class HeroSlide {
     required this.buttonText,
     required this.colors,
     required this.accentColor,
+    this.imagePath,
   });
 
   final String eyebrow;
@@ -866,6 +873,11 @@ class HeroSlide {
   final String buttonText;
   final List<Color> colors;
   final Color accentColor;
+
+  /// Optional background image. When present the slide renders it with
+  /// [BoxFit.cover] behind a translucent overlay for text contrast; the
+  /// decorative product mock is hidden so the photo takes the visual lead.
+  final String? imagePath;
 }
 
 class HeroSlideView extends StatelessWidget {
@@ -882,10 +894,13 @@ class HeroSlideView extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final sidePadding = AppLayout.horizontalPadding(viewportWidth);
-    final dark = slide.colors.first == AppColors.darkPromo;
+    final hasImage = slide.imagePath != null;
+    // With a background photo we always render on a dark overlay to keep
+    // titles/buttons readable regardless of the picture's palette.
+    final dark = hasImage || slide.colors.first == AppColors.darkPromo;
     final titleColor = dark ? AppColors.onDark : AppColors.textPrimary;
     final bodyColor = dark
-        ? AppColors.onDark.withValues(alpha: 0.82)
+        ? AppColors.onDark.withValues(alpha: 0.88)
         : AppColors.textSecondary;
     final offerColor = dark ? AppColors.onDark : AppColors.textPrimary;
 
@@ -896,114 +911,166 @@ class HeroSlideView extends StatelessWidget {
           constraints: BoxConstraints(
             maxWidth: AppLayout.contentMaxWidth(viewportWidth),
           ),
-          child: Container(
-            width: double.infinity,
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: slide.colors,
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
               borderRadius: BorderRadius.circular(AppRadii.block),
-              border: Border.all(
-                color: dark
-                    ? AppColors.onDark.withValues(alpha: 0.08)
-                    : AppColors.borderSoft,
-              ),
               boxShadow: AppShadows.base,
             ),
-            clipBehavior: Clip.antiAlias,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 820;
-                return Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 22 : 64,
-                    vertical: compact ? 28 : 36,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: compact ? 1 : 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              slide.eyebrow.toUpperCase(),
-                              style: TextStyle(
-                                color: dark
-                                    ? AppColors.accentPeach
-                                    : slide.accentColor,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.1,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadii.block),
+              child: Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  // ── Background: image (cover) or original gradient ─────
+                  Positioned.fill(
+                    child: hasImage
+                        ? Image.asset(
+                            slide.imagePath!,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                            filterQuality: FilterQuality.medium,
+                            errorBuilder: (_, _, _) => DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: slide.colors,
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              slide.title,
-                              style: Theme.of(context).textTheme.displayMedium
-                                  ?.copyWith(
-                                    color: titleColor,
-                                    fontWeight: FontWeight.w900,
-                                    height: compact ? 1.0 : 1.02,
-                                    fontSize: compact ? 34 : null,
-                                  ),
+                          )
+                        : DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: slide.colors,
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
                             ),
-                            SizedBox(height: compact ? 12 : 16),
-                            Text(
-                              slide.description,
-                              maxLines: compact ? 3 : null,
-                              overflow: compact
-                                  ? TextOverflow.ellipsis
-                                  : TextOverflow.visible,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(color: bodyColor, height: 1.35),
-                            ),
-                            SizedBox(height: compact ? 20 : 24),
-                            Wrap(
-                              spacing: 14,
-                              runSpacing: 12,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                FilledButton(
-                                  onPressed: onPressed,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: slide.accentColor,
-                                    foregroundColor: AppColors.surface,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: compact ? 18 : 24,
-                                      vertical: compact ? 12 : 16,
-                                    ),
-                                  ),
-                                  child: Text(slide.buttonText),
-                                ),
-                                Text(
-                                  slide.offer,
-                                  style: TextStyle(
-                                    color: offerColor,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (!compact) ...[
-                        const SizedBox(width: 40),
-                        Expanded(
-                          flex: 4,
-                          child: HeroProductMock(
-                            accentColor: slide.accentColor,
-                            dark: dark,
+                          ),
+                  ),
+                  // ── Contrast overlay for text readability ──────────────
+                  if (hasImage)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.62),
+                              Colors.black.withValues(alpha: 0.28),
+                              Colors.black.withValues(alpha: 0.10),
+                            ],
+                            stops: const [0.0, 0.55, 1.0],
                           ),
                         ),
-                      ],
-                    ],
+                      ),
+                    ),
+                  // ── Slide content (unchanged buttons/labels) ───────────
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 820;
+                      return Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 22 : 64,
+                          vertical: compact ? 28 : 36,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: compact ? 1 : 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    slide.eyebrow.toUpperCase(),
+                                    style: TextStyle(
+                                      color: dark
+                                          ? AppColors.accentPeach
+                                          : slide.accentColor,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    slide.title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .displayMedium
+                                        ?.copyWith(
+                                          color: titleColor,
+                                          fontWeight: FontWeight.w900,
+                                          height: compact ? 1.0 : 1.02,
+                                          fontSize: compact ? 34 : null,
+                                        ),
+                                  ),
+                                  SizedBox(height: compact ? 12 : 16),
+                                  Text(
+                                    slide.description,
+                                    maxLines: compact ? 3 : null,
+                                    overflow: compact
+                                        ? TextOverflow.ellipsis
+                                        : TextOverflow.visible,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: bodyColor,
+                                          height: 1.35,
+                                        ),
+                                  ),
+                                  SizedBox(height: compact ? 20 : 24),
+                                  Wrap(
+                                    spacing: 14,
+                                    runSpacing: 12,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      FilledButton(
+                                        onPressed: onPressed,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: slide.accentColor,
+                                          foregroundColor: AppColors.surface,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: compact ? 18 : 24,
+                                            vertical: compact ? 12 : 16,
+                                          ),
+                                        ),
+                                        child: Text(slide.buttonText),
+                                      ),
+                                      Text(
+                                        slide.offer,
+                                        style: TextStyle(
+                                          color: offerColor,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Product mock only when there is no photo.
+                            if (!compact && !hasImage) ...[
+                              const SizedBox(width: 40),
+                              Expanded(
+                                flex: 4,
+                                child: HeroProductMock(
+                                  accentColor: slide.accentColor,
+                                  dark: dark,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
         ),
@@ -1060,12 +1127,19 @@ class HeroProductMock extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 38),
-                const Icon(
-                  Icons.spa_outlined,
-                  color: AppColors.primary,
-                  size: 44,
+                SizedBox(
+                  height: 56,
+                  child: Image.asset(
+                    'assets/img/essenza_logo.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.spa_outlined,
+                      color: AppColors.primary,
+                      size: 44,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 const Text(
                   'AROMAS',
                   style: TextStyle(

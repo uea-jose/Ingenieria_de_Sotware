@@ -565,7 +565,9 @@ class _SearchProductCardState extends State<_SearchProductCard> {
                           ),
                         ),
                       ),
-                      _MiniLabel(text: stock <= 3 ? 'Stock bajo' : 'Demo'),
+                      _MiniLabel(
+                        text: stock <= 3 ? 'Stock bajo' : 'Stock: $stock',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),

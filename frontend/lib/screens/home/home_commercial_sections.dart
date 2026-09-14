@@ -370,11 +370,26 @@ class HomeFooter extends StatelessWidget {
                   icon: const Icon(Icons.arrow_upward),
                   label: const Text('Explorar catalogo'),
                 );
-                final text = Column(
-                  crossAxisAlignment: compact
-                      ? CrossAxisAlignment.center
-                      : CrossAxisAlignment.start,
+                final brandRow = Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: compact
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
                   children: [
+                    SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Image.asset(
+                        'assets/img/essenza_logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.spa_outlined,
+                          color: AppColors.onDark,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     const Text(
                       'Aromas Store',
                       style: TextStyle(
@@ -383,6 +398,14 @@ class HomeFooter extends StatelessWidget {
                         fontSize: 22,
                       ),
                     ),
+                  ],
+                );
+                final text = Column(
+                  crossAxisAlignment: compact
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    brandRow,
                     const SizedBox(height: 6),
                     Text(
                       'Portada publica preparada para conectar busqueda, promociones y compra real por etapas.',

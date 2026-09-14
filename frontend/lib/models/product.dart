@@ -18,6 +18,7 @@ class Product {
     required this.brand,
     required this.category,
     required this.inventory,
+    this.gender = 'UNISEX',
   });
 
   final int id;
@@ -28,6 +29,9 @@ class Product {
   final int? volumeMl;
   final String? imageUrl;
   final bool active;
+
+  /// MASCULINO | FEMENINO | UNISEX (backend enum GeneroPerfume).
+  final String gender;
   final int categoryId;
   final int brandId;
   final Brand brand;
@@ -44,6 +48,7 @@ class Product {
       volumeMl: json['volumenMl'] == null ? null : asInt(json['volumenMl']),
       imageUrl: json['imagenUrl'] as String?,
       active: json['activo'] == true,
+      gender: (json['genero'] as String?)?.toUpperCase() ?? 'UNISEX',
       categoryId: asInt(json['categoriaId']),
       brandId: asInt(json['marcaId']),
       brand: Brand.fromJson(

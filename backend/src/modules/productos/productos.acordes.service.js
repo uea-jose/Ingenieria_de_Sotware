@@ -38,7 +38,7 @@ async function obtenerProductoBase(client, productoId) {
   return producto;
 }
 
-function normalizarAcordes(acordes) {
+export function normalizarAcordes(acordes) {
   if (!Array.isArray(acordes) || acordes.length === 0) {
     throw errorConEstado("acordes debe contener al menos un elemento.");
   }
@@ -78,6 +78,22 @@ function normalizarAcordes(acordes) {
       ordenVisual: index + 1,
       copiadoDeReferencia: item.copiadoDeReferencia,
     }));
+}
+
+export async function guardarPerfilEnTransaccion(tx, productoId, items) {
+  const acordes = items.length === 0 ? [] : normalizarAcordes(items);
+  const count = await tx.acorde.count({ where: {
+    id: { in: acordes.map((item) => item.acordeId) }, activo: true,
+  } });
+  if (count !== acordes.length) {
+    throw errorConEstado("Uno o mas acordes no existen o estan inactivos.");
+  }
+  await tx.productoAcorde.deleteMany({ where: { productoId } });
+  if (acordes.length) {
+    await tx.productoAcorde.createMany({ data: acordes.map((item) => ({
+      ...item, productoId, copiadoDeReferencia: false,
+    })) });
+  }
 }
 
 export async function obtenerAcordesDeProducto(productoId) {

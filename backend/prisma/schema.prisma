@@ -137,6 +137,7 @@ model Producto {
   volumenMl                      Int?
   imagenUrl                      String?                @db.VarChar(500)
   activo                         Boolean                @default(true)
+  genero                         GeneroPerfume          @default(UNISEX)
   estadoPublicacion              EstadoPublicacion      @default(BORRADOR)
   disponibilidad                 DisponibilidadProducto @default(DISPONIBLE)
   destacado                      Boolean                @default(false)

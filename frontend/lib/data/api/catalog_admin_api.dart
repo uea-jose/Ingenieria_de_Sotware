@@ -6,6 +6,7 @@ import '../../config/api_config.dart';
 import '../../models/accord_profile.dart';
 import '../../models/aroma_accord.dart';
 import '../../models/brand.dart';
+import '../../models/category.dart';
 import '../../models/perfume_reference.dart';
 import '../../models/product.dart';
 
@@ -58,6 +59,20 @@ class CatalogAdminApi {
   Future<List<Product>> loadProducts() async {
     final json = await _request('/productos', authenticated: false);
     return _list(json).map(Product.fromJson).toList(growable: false);
+  }
+
+  Future<List<Category>> loadCategories() async {
+    final json = await _request('/categorias', authenticated: false);
+    return _list(json).map(Category.fromJson).toList(growable: false);
+  }
+
+  Future<Product> saveProduct(Map<String, dynamic> data, {int? id}) async {
+    final json = await _request(
+      id == null ? '/productos' : '/productos/$id',
+      method: id == null ? 'POST' : 'PUT',
+      body: data,
+    );
+    return Product.fromJson((json['dato'] as Map).cast<String, dynamic>());
   }
 
   Future<List<PerfumeReference>> loadReferences(int brandId) async {

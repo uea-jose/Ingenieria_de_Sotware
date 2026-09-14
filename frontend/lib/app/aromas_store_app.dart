@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../features/admin/accord_editor/accord_editor_page.dart';
+import '../features/admin/accord_editor/catalog_admin_page.dart';
 import '../screens/accord_search/accord_search_page.dart';
 import '../screens/home/home_page.dart';
 import 'app_theme.dart';
+import '../screens/perfumery_catalog/perfumery_catalog_page.dart';
 
 class AromasStoreApp extends StatelessWidget {
   const AromasStoreApp({super.key});
@@ -16,7 +17,9 @@ class AromasStoreApp extends StatelessWidget {
       theme: buildAppTheme(),
       home: const HomePage(),
       routes: {
-        '/admin/acordes': (context) => const AccordEditorPage(),
+        '/catalogo-perfumeria': (context) => const PerfumeryCatalogPage(),
+        '/admin/acordes': (context) => const CatalogAdminPage(),
+        '/admin/catalogo': (context) => const CatalogAdminPage(),
         '/acordes': (context) => const AccordSearchPage(),
       },
     );
