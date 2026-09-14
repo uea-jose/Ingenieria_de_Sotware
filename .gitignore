@@ -39,3 +39,9 @@ BAKEND_ARBOL.TXT
 Thumbs.db
 .idea/
 backend/.github/
+
+# Kiro IDE local settings (per-machine)
+.kiro/
+
+# Private working materials (PDFs, screenshots, source images)
+adicionales/
