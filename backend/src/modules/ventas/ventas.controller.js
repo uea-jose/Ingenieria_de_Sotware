@@ -1,4 +1,8 @@
-import { crearVenta, obtenerVentas } from "./ventas.service.js";
+import {
+  crearVenta,
+  obtenerVentas,
+  obtenerVentasDelCliente,
+} from "./ventas.service.js";
 
 export async function registrarVenta(req, res, next) {
   try {
@@ -17,6 +21,19 @@ export async function registrarVenta(req, res, next) {
 export async function listarVentas(req, res, next) {
   try {
     const ventas = await obtenerVentas();
+
+    res.json({
+      datos: ventas,
+      total: ventas.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listarMisVentas(req, res, next) {
+  try {
+    const ventas = await obtenerVentasDelCliente(req.usuario);
 
     res.json({
       datos: ventas,

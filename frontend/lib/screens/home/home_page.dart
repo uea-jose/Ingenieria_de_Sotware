@@ -255,13 +255,18 @@ class _HomePageState extends State<HomePage> {
     _persistCart();
   }
 
-  Future<void> _startCheckout() async {
+  /// Attempts to move the current cart to `/checkout`.
+  ///
+  /// Returns `true` if the checkout navigation was initiated (so the caller
+  /// can decide whether to close its bottom sheet), `false` if validation
+  /// failed and the user should stay on the current sheet.
+  Future<bool> _startCheckout() async {
     await _validateCart(showMessages: false);
     final validation = _cartValidation;
 
     if (validation == null) {
       _showSnackBar('Valida el carrito antes de continuar.');
-      return;
+      return false;
     }
 
     if (!validation.valid) {
@@ -270,10 +275,9 @@ class _HomePageState extends State<HomePage> {
             ? 'Revisa el carrito antes de finalizar la compra.'
             : validation.errors.first,
       );
-      return;
+      return false;
     }
-
-    _showSnackBar('Carrito listo. El siguiente modulo sera checkout y pedido.');
+    return true;
   }
 
   Future<void> _validateCart({bool showMessages = true}) async {
@@ -341,8 +345,18 @@ class _HomePageState extends State<HomePage> {
                 refreshPanel(() {});
               },
               onCheckout: () async {
-                await _startCheckout();
-                refreshPanel(() {});
+                final proceed = await _startCheckout();
+                if (!context.mounted) return;
+                if (proceed) {
+                  // Close the sheet BEFORE navigating so we don't leave
+                  // the bottom sheet under the checkout route.
+                  Navigator.of(context).pop();
+                  // /checkout is protected by RequireAuth: unauthenticated
+                  // users go through /login and come back automatically.
+                  Navigator.of(context).pushNamed('/checkout');
+                } else {
+                  refreshPanel(() {});
+                }
               },
             );
           },

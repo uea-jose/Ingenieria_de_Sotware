@@ -125,3 +125,36 @@ export async function obtenerVentas() {
     },
   });
 }
+
+// Returns only the sales that belong to the authenticated customer.
+// Used by GET /ventas/mis so a Cliente can render their own order history
+// without having permission to list every sale in the system.
+export async function obtenerVentasDelCliente(usuario) {
+  const cliente = await prisma.cliente.findUnique({
+    where: { usuarioId: usuario.id },
+  });
+
+  if (!cliente) {
+    return [];
+  }
+
+  return prisma.venta.findMany({
+    where: { clienteId: cliente.id },
+    orderBy: { id: "desc" },
+    include: {
+      cliente: true,
+      detalles: {
+        include: {
+          producto: {
+            include: {
+              marca: true,
+              categoria: true,
+            },
+          },
+        },
+      },
+      pagos: true,
+      factura: true,
+    },
+  });
+}

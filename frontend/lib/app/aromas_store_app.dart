@@ -5,7 +5,9 @@ import '../screens/accord_search/accord_search_page.dart';
 import '../screens/account/account_page.dart';
 import '../screens/auth/login_page.dart';
 import '../screens/auth/register_page.dart';
+import '../screens/checkout/checkout_page.dart';
 import '../screens/home/home_page.dart';
+import '../screens/orders/my_orders_page.dart';
 import '../screens/perfumery_catalog/perfumery_catalog_page.dart';
 import '../state/auth_scope.dart';
 import 'app_theme.dart';
@@ -60,6 +62,8 @@ class _AromasStoreAppState extends State<AromasStoreApp> {
           '/login': (context) => const LoginPage(),
           '/registro': (context) => const RegisterPage(),
           '/cuenta': (context) => const RequireAuth(child: AccountPage()),
+          '/checkout': (context) => const RequireAuth(child: CheckoutPage()),
+          '/mis-pedidos': (context) => const RequireAuth(child: MyOrdersPage()),
         },
       ),
     );

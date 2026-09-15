@@ -392,10 +392,10 @@ class _AuthenticatedView extends StatelessWidget {
         _MenuTile(
           icon: Icons.receipt_long_outlined,
           title: 'Mis pedidos',
-          onTap: () => _showPendingMessage(
-            context,
-            'El historial de pedidos se habilitará en una siguiente etapa.',
-          ),
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushNamed('/mis-pedidos');
+          },
         ),
         _MenuTile(
           icon: Icons.favorite_border,

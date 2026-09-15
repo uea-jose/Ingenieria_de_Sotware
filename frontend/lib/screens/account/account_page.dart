@@ -61,10 +61,9 @@ class AccountPage extends StatelessWidget {
                       : () async {
                           await auth.logout();
                           if (!context.mounted) return;
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            '/',
-                            (route) => false,
-                          );
+                          Navigator.of(
+                            context,
+                          ).pushNamedAndRemoveUntil('/', (route) => false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Sesión cerrada.'),
@@ -190,7 +189,7 @@ class _QuickLinks extends StatelessWidget {
         icon: Icons.receipt_long_outlined,
         title: 'Mis pedidos',
         subtitle: 'Historial y estado de tus compras',
-        onTap: () => _pending(context),
+        onTap: () => Navigator.of(context).pushNamed('/mis-pedidos'),
       ),
       _LinkTile(
         icon: Icons.favorite_border,
@@ -222,8 +221,7 @@ class _QuickLinks extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < tiles.length; i++) ...[
-            if (i > 0)
-              const Divider(height: 1, color: AppColors.borderSoft),
+            if (i > 0) const Divider(height: 1, color: AppColors.borderSoft),
             tiles[i],
           ],
         ],
@@ -263,10 +261,7 @@ class _LinkTile extends StatelessWidget {
         foregroundColor: AppColors.primary,
         child: Icon(icon),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
     );
