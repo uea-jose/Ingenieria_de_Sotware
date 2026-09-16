@@ -193,6 +193,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final result = await _ordersApi.createOrder(
         token: token,
         items: items,
+        paymentMethod: _paymentMethodId,
         entrega: snapshot,
       );
       CartStorage.clear();
@@ -834,31 +835,7 @@ class _SuccessView extends StatelessWidget {
                   _InfoRow(label: 'Cliente', value: order.clienteNombre!),
                 ],
                 const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgPeach,
-                    borderRadius: BorderRadius.circular(AppRadii.card),
-                    border: Border.all(color: AppColors.warning),
-                  ),
-                  child: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.hourglass_bottom, color: AppColors.warning),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Tu pedido está pendiente de aprobación de pago. Un vendedor validará el método elegido y te confirmará cuando quede pagado.',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            height: 1.4,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _PaymentStatusBanner(order: order),
                 if (stockWarnings.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   // Consolidamos todas las alertas de inventario en un
@@ -896,6 +873,99 @@ class _SuccessView extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Banner in the success view whose text depends on:
+///   - The sale state returned by the backend (`PAGADA` for TARJETA
+///     simulada, `PENDIENTE` for TRANSFERENCIA/EFECTIVO).
+///   - The payment method persisted on `order.pagos.first.metodo`.
+///
+/// We deliberately trust the backend response instead of the local
+/// `_paymentMethodId` so the user sees the actual state that will show
+/// up in `/mis-pedidos` and the admin panel.
+class _PaymentStatusBanner extends StatelessWidget {
+  const _PaymentStatusBanner({required this.order});
+
+  final Order order;
+
+  @override
+  Widget build(BuildContext context) {
+    final metodo = order.pagos.isNotEmpty ? order.pagos.first.metodo : null;
+
+    if (order.isPaid) {
+      // TARJETA (pago simulado) — venta ya PAGADA, inventario descontado.
+      return _StatusCard(
+        icon: Icons.check_circle,
+        background: AppColors.successSoft,
+        border: AppColors.success,
+        iconColor: AppColors.success,
+        text:
+            'Pago con tarjeta simulado aprobado automáticamente. Tu pedido queda en estado PAGADA. Podrás ver la factura cuando un administrador la genere.',
+      );
+    }
+
+    // PENDIENTE — mensaje según el método persistido.
+    final texto = switch (metodo) {
+      'TRANSFERENCIA' =>
+        'Envía el comprobante de transferencia al correo indicado. Un administrador confirmará el pago y tu pedido pasará a PAGADA.',
+      'EFECTIVO' =>
+        'Tu pedido queda en estado PENDIENTE. El cobro en efectivo se registrará al momento de entregar.',
+      _ =>
+        'Tu pedido está pendiente. Un administrador confirmará el pago próximamente.',
+    };
+    return _StatusCard(
+      icon: Icons.hourglass_bottom,
+      background: AppColors.bgPeach,
+      border: AppColors.warning,
+      iconColor: AppColors.warning,
+      text: texto,
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.icon,
+    required this.background,
+    required this.border,
+    required this.iconColor,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color background;
+  final Color border;
+  final Color iconColor;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                height: 1.4,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

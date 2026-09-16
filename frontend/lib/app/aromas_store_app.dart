@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/admin/accord_editor/catalog_admin_page.dart';
+import '../features/admin/sales/admin_sales_page.dart';
 import '../screens/accord_search/accord_search_page.dart';
 import '../screens/account/account_page.dart';
 import '../screens/auth/login_page.dart';
@@ -58,6 +59,8 @@ class _AromasStoreAppState extends State<AromasStoreApp> {
               const RequireAuth(requireStaff: true, child: CatalogAdminPage()),
           '/admin/catalogo': (context) =>
               const RequireAuth(requireStaff: true, child: CatalogAdminPage()),
+          '/admin/ventas': (context) =>
+              const RequireAuth(requireStaff: true, child: AdminSalesPage()),
           '/acordes': (context) => const AccordSearchPage(),
           '/login': (context) => const LoginPage(),
           '/registro': (context) => const RegisterPage(),

@@ -78,7 +78,20 @@ async function obtenerVentaPendiente(tx, ventaId) {
   return venta;
 }
 
-async function descontarInventario(tx, venta, usuarioId) {
+/**
+ * Descuenta el inventario por cada detalle de la venta y crea el
+ * MovimientoInventario correspondiente. Devuelve el array de alertas
+ * de stock bajo (opcional en la respuesta).
+ *
+ * Exportado para ser reutilizado desde ventas.service.js cuando el
+ * cliente paga con TARJETA (pago simulado aprobado automáticamente en
+ * la misma transacción de creación de la venta).
+ *
+ * @param {import('@prisma/client').Prisma.TransactionClient} tx
+ * @param {object} venta - Venta ya cargada con `detalles.producto.inventario`.
+ * @param {number|null} usuarioId - Usuario que dispara la operación.
+ */
+export async function descontarInventario(tx, venta, usuarioId) {
   const alertasStock = [];
 
   for (const detalle of venta.detalles) {
@@ -202,4 +215,121 @@ export async function obtenerPagos() {
       },
     },
   });
+}
+
+/**
+ * Confirma (aprueba) un Pago PENDIENTE existente sin re-preguntar el
+ * método. Se usa desde `POST /api/pagos/:id/confirmar` cuando el
+ * administrador o vendedor confirma una transferencia o registra un
+ * cobro contra entrega.
+ *
+ * Reglas:
+ * - El pago debe existir y estar en estado PENDIENTE.
+ * - La venta asociada debe estar en estado PENDIENTE (no doble confirmar).
+ * - No se cambia el método: se lee del propio pago.
+ * - Efectos: pago → PAGADO (con fechaPago=now), inventario descontado,
+ *   venta → PAGADA. Devuelve alertasStock (mismo shape que registrarPago).
+ */
+export async function confirmarPago({ pagoId, usuario }) {
+  if (!Number.isInteger(pagoId) || pagoId <= 0) {
+    const error = new Error("pagoId debe ser un numero entero positivo.");
+    error.status = 400;
+    throw error;
+  }
+
+  const resultado = await prisma.$transaction(async (tx) => {
+    const pago = await tx.pago.findUnique({
+      where: { id: pagoId },
+    });
+
+    if (!pago) {
+      const error = new Error("El pago indicado no existe.");
+      error.status = 404;
+      throw error;
+    }
+
+    if (pago.estado !== "PENDIENTE") {
+      const error = new Error(
+        `El pago no esta pendiente. Estado actual: ${pago.estado}.`,
+      );
+      error.status = 409;
+      throw error;
+    }
+
+    // Carga la venta con detalles + inventario para descontar stock.
+    const venta = await tx.venta.findUnique({
+      where: { id: pago.ventaId },
+      include: {
+        detalles: {
+          include: {
+            producto: {
+              include: { inventario: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!venta) {
+      const error = new Error("La venta asociada al pago no existe.");
+      error.status = 404;
+      throw error;
+    }
+
+    if (venta.estado !== "PENDIENTE") {
+      const error = new Error(
+        `La venta no esta pendiente. Estado actual: ${venta.estado}.`,
+      );
+      error.status = 409;
+      throw error;
+    }
+
+    const alertasStock = await descontarInventario(tx, venta, usuario.id);
+
+    const pagoActualizado = await tx.pago.update({
+      where: { id: pagoId },
+      data: {
+        estado: "PAGADO",
+        fechaPago: new Date(),
+      },
+    });
+
+    const ventaActualizada = await tx.venta.update({
+      where: { id: venta.id },
+      data: { estado: "PAGADA" },
+      include: {
+        cliente: true,
+        detalles: {
+          include: {
+            producto: {
+              include: {
+                inventario: true,
+                marca: true,
+                categoria: true,
+              },
+            },
+          },
+        },
+        pagos: true,
+        factura: true,
+      },
+    });
+
+    return {
+      pago: pagoActualizado,
+      venta: ventaActualizada,
+      alertasStock,
+    };
+  });
+
+  const metodo = resultado.pago.metodo;
+  return {
+    ...resultado,
+    mensaje:
+      metodo === "TRANSFERENCIA"
+        ? "Transferencia confirmada. Venta marcada como PAGADA e inventario descontado."
+        : metodo === "EFECTIVO"
+        ? "Cobro en efectivo registrado. Venta marcada como PAGADA e inventario descontado."
+        : "Pago confirmado. Venta marcada como PAGADA e inventario descontado.",
+  };
 }

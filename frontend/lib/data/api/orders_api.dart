@@ -86,9 +86,18 @@ class OrdersApi {
 
   final http.Client _client;
 
+  /// Accepted `metodoPago` values, mirror of METODOS_CHECKOUT_PERMITIDOS
+  /// in backend/src/modules/ventas/ventas.service.js. TARJETA is a
+  /// simulated payment: the backend approves it automatically and the
+  /// sale returns as PAGADA. The other two leave the sale PENDIENTE.
+  static const paymentMethodTarjeta = 'TARJETA';
+  static const paymentMethodTransferencia = 'TRANSFERENCIA';
+  static const paymentMethodEfectivo = 'EFECTIVO';
+
   Future<OrderCreationResult> createOrder({
     required String token,
     required List<OrderItemDraft> items,
+    required String paymentMethod,
     DeliverySnapshotDraft? entrega,
   }) async {
     if (items.isEmpty) {
@@ -100,6 +109,7 @@ class OrdersApi {
 
     final body = <String, dynamic>{
       'items': items.map((item) => item.toJson()).toList(),
+      'metodoPago': paymentMethod,
       if (entrega != null && !entrega.isEmpty) ...entrega.toJson(),
     };
 

@@ -408,6 +408,18 @@ class _AuthenticatedView extends StatelessWidget {
               Navigator.of(context).pushNamed('/admin/acordes');
             },
           ),
+        // Bodeguero no puede aprobar pagos ni facturar (el backend
+        // requiere Administrador o Vendedor), así que el enlace solo se
+        // muestra a quienes pueden operarlo.
+        if (user.isAdmin || user.isVendedor)
+          _MenuTile(
+            icon: Icons.point_of_sale_outlined,
+            title: 'Panel de ventas',
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed('/admin/ventas');
+            },
+          ),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,

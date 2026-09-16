@@ -9,6 +9,7 @@ export async function registrarVenta(req, res, next) {
     const {
       clienteId,
       items,
+      metodoPago,
       // Delivery snapshot — every field is optional at the API layer
       // (the frontend enforces required for direccion/ciudad/telefono
       // when creating a new sale). Coordinates get validated inside the
@@ -25,6 +26,7 @@ export async function registrarVenta(req, res, next) {
     const resultado = await crearVenta({
       clienteId,
       items,
+      metodoPago,
       entrega: {
         direccionEntrega,
         ciudadEntrega,
