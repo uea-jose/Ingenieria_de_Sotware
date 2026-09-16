@@ -19,6 +19,45 @@ class OrderItemDraft {
   };
 }
 
+/// Delivery snapshot to persist alongside the sale row. Mirrors the six
+/// nullable columns added to `model Venta` (see schema.prisma). The
+/// backend already accepts nulls, so callers can send just the required
+/// fields on new sales and skip lat/lng when the user rejected GPS.
+class DeliverySnapshotDraft {
+  const DeliverySnapshotDraft({
+    this.direccionEntrega,
+    this.ciudadEntrega,
+    this.referenciaEntrega,
+    this.telefonoContacto,
+    this.latitudEntrega,
+    this.longitudEntrega,
+  });
+
+  final String? direccionEntrega;
+  final String? ciudadEntrega;
+  final String? referenciaEntrega;
+  final String? telefonoContacto;
+  final double? latitudEntrega;
+  final double? longitudEntrega;
+
+  bool get isEmpty =>
+      (direccionEntrega == null || direccionEntrega!.trim().isEmpty) &&
+      (ciudadEntrega == null || ciudadEntrega!.trim().isEmpty) &&
+      (referenciaEntrega == null || referenciaEntrega!.trim().isEmpty) &&
+      (telefonoContacto == null || telefonoContacto!.trim().isEmpty) &&
+      latitudEntrega == null &&
+      longitudEntrega == null;
+
+  Map<String, dynamic> toJson() => {
+    if (direccionEntrega != null) 'direccionEntrega': direccionEntrega,
+    if (ciudadEntrega != null) 'ciudadEntrega': ciudadEntrega,
+    if (referenciaEntrega != null) 'referenciaEntrega': referenciaEntrega,
+    if (telefonoContacto != null) 'telefonoContacto': telefonoContacto,
+    if (latitudEntrega != null) 'latitudEntrega': latitudEntrega,
+    if (longitudEntrega != null) 'longitudEntrega': longitudEntrega,
+  };
+}
+
 /// Result of a successful `POST /ventas`.
 ///
 /// The backend responds with `{venta, alertasStock, mensaje}` — we surface
@@ -50,6 +89,7 @@ class OrdersApi {
   Future<OrderCreationResult> createOrder({
     required String token,
     required List<OrderItemDraft> items,
+    DeliverySnapshotDraft? entrega,
   }) async {
     if (items.isEmpty) {
       throw const AuthException(
@@ -58,11 +98,16 @@ class OrdersApi {
       );
     }
 
+    final body = <String, dynamic>{
+      'items': items.map((item) => item.toJson()).toList(),
+      if (entrega != null && !entrega.isEmpty) ...entrega.toJson(),
+    };
+
     final json = await _request(
       '/ventas',
       method: 'POST',
       token: token,
-      body: {'items': items.map((item) => item.toJson()).toList()},
+      body: body,
     );
 
     final ventaJson = json['venta'];

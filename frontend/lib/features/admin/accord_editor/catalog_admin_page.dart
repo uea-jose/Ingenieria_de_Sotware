@@ -31,6 +31,7 @@ class _CatalogAdminPageState extends State<CatalogAdminPage> {
   String _name = '', _image = '', _brand = '';
   String? _error;
   bool _ready = false, _busy = false, _dirty = false;
+  bool _obscureAdminPassword = true;
   int _revision = 0;
 
   /// true while the "+ Añadir acorde" temporary row/picker is open.
@@ -272,11 +273,26 @@ class _CatalogAdminPageState extends State<CatalogAdminPage> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _password,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Contraseña',
-                        ),
+                        obscureText: _obscureAdminPassword,
+                        autofillHints: const [AutofillHints.password],
                         onSubmitted: (_) => _login(),
+                        decoration: InputDecoration(
+                          labelText: 'Contraseña',
+                          suffixIcon: IconButton(
+                            tooltip: _obscureAdminPassword
+                                ? 'Mostrar contraseña'
+                                : 'Ocultar contraseña',
+                            icon: Icon(
+                              _obscureAdminPassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureAdminPassword =
+                                  !_obscureAdminPassword,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       FilledButton(

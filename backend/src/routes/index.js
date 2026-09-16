@@ -16,6 +16,7 @@ import promocionesRoutes from "../modules/promociones/promociones.routes.js";
 import referenciasRoutes from "../modules/referencias/referencias.routes.js";
 import categoriasRoutes from "../modules/categorias/categorias.routes.js";
 import productosRoutes from "../modules/productos/productos.routes.js";
+import ubicacionRoutes from "../modules/ubicacion/ubicacion.routes.js";
 import ventasRoutes from "../modules/ventas/ventas.routes.js";
 
 const router = Router();
@@ -54,8 +55,10 @@ router.get("/", (req, res) => {
       { metodo: "POST", ruta: "/api/carrito/validar", descripcion: "Valida productos del carrito, calcula totales y alerta stock bajo." },
       { metodo: "POST", ruta: "/api/clientes/registro", descripcion: "Registra un cliente comprador." },
       { metodo: "GET", ruta: "/api/clientes", descripcion: "Lista clientes registrados. Requiere token de Administrador o Vendedor." },
-      { metodo: "POST", ruta: "/api/ventas", descripcion: "Crea una venta pendiente desde un carrito validado. Requiere token." },
+      { metodo: "POST", ruta: "/api/ventas", descripcion: "Crea una venta pendiente desde un carrito validado. Acepta snapshot opcional de entrega (direccionEntrega, ciudadEntrega, referenciaEntrega, telefonoContacto, latitudEntrega, longitudEntrega). Requiere token." },
       { metodo: "GET", ruta: "/api/ventas", descripcion: "Lista ventas registradas. Requiere token de Administrador o Vendedor." },
+      { metodo: "GET", ruta: "/api/ventas/mis", descripcion: "Lista las ventas del cliente autenticado (historial personal)." },
+      { metodo: "GET", ruta: "/api/ubicacion/reverse", descripcion: "Reverse geocoding vía Nominatim (params lat, lon). Cache 24h, rate limit 1 req/s." },
       { metodo: "POST", ruta: "/api/pagos", descripcion: "Registra pago simulado y descuenta inventario si queda PAGADO." },
       { metodo: "GET", ruta: "/api/pagos", descripcion: "Lista pagos registrados. Requiere token de Administrador o Vendedor." },
       { metodo: "GET", ruta: "/api/inventario", descripcion: "Lista stock actual. Requiere token de Administrador o Bodeguero." },
@@ -99,6 +102,7 @@ router.use("/promociones", promocionesRoutes);
 router.use("/referencias", referenciasRoutes);
 router.use("/categorias", categoriasRoutes);
 router.use("/productos", productosRoutes);
+router.use("/ubicacion", ubicacionRoutes);
 router.use("/ventas", ventasRoutes);
 
 // Aliases kept while the frontend migration is in progress.

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/app_design_tokens.dart';
+import '../../core/validators.dart';
 import '../../state/auth_scope.dart';
+import '../../widgets/feedback/app_feedback.dart';
+import '../../widgets/feedback/feedback_banner.dart';
+import '../../widgets/forms/password_strength_meter.dart';
 
 /// Public route: `/registro`.
 ///
@@ -27,19 +32,31 @@ class _RegisterPageState extends State<RegisterPage> {
   final _apellidosController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
   final _telefonoController = TextEditingController();
   final _cedulaController = TextEditingController();
   final _direccionController = TextEditingController();
   final _ciudadController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // The strength meter and the confirmation validator depend on the
+    // current password text, so we rebuild on every keystroke.
+    _passwordController.addListener(_onPasswordChanged);
+  }
 
   @override
   void dispose() {
+    _passwordController.removeListener(_onPasswordChanged);
     _nombresController.dispose();
     _apellidosController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
     _telefonoController.dispose();
     _cedulaController.dispose();
     _direccionController.dispose();
@@ -47,17 +64,25 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  void _onPasswordChanged() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _submit() async {
     final controller = AuthScope.read(context);
     if (controller.isBusy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    // Store the phone in the canonical Ecuadorian shape (`09XXXXXXXX`)
+    // regardless of how the user typed it (`+593 9...`, `09 ...`, etc.).
+    final telefonoNormalizado = normalizePhoneEcuador(_telefonoController.text);
 
     final ok = await controller.register(
       nombres: _nombresController.text,
       apellidos: _apellidosController.text,
       email: _emailController.text,
       password: _passwordController.text,
-      telefono: _telefonoController.text,
+      telefono: telefonoNormalizado ?? _telefonoController.text,
       cedula: _cedulaController.text,
       direccion: _direccionController.text,
       ciudad: _ciudadController.text,
@@ -72,11 +97,9 @@ class _RegisterPageState extends State<RegisterPage> {
             : '/',
         (route) => false,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('¡Bienvenido a Aromas Store, ${_nombresController.text.trim()}!'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppFeedback.success(
+        context,
+        '¡Bienvenido a Aromas Store, ${_nombresController.text.trim()}!',
       );
     }
   }
@@ -163,9 +186,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             prefixIcon: Icon(Icons.person_outline),
                           ),
                           validator: (v) =>
-                              (v == null || v.trim().isEmpty)
-                                  ? 'Escribe tus nombres.'
-                                  : null,
+                              Validators.required(v, field: 'Nombres'),
                         ),
                         right: TextFormField(
                           controller: _apellidosController,
@@ -176,9 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             prefixIcon: Icon(Icons.badge_outlined),
                           ),
                           validator: (v) =>
-                              (v == null || v.trim().isEmpty)
-                                  ? 'Escribe tus apellidos.'
-                                  : null,
+                              Validators.required(v, field: 'Apellidos'),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -193,14 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           labelText: 'Correo electrónico *',
                           prefixIcon: Icon(Icons.mail_outline),
                         ),
-                        validator: (value) {
-                          final v = value?.trim() ?? '';
-                          if (v.isEmpty) return 'Escribe tu correo.';
-                          if (!v.contains('@') || !v.contains('.')) {
-                            return 'Formato de correo no válido.';
-                          }
-                          return null;
-                        },
+                        validator: Validators.email,
                       ),
                       const SizedBox(height: 14),
 
@@ -212,7 +224,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         onChanged: _clearErrorIfAny,
                         decoration: InputDecoration(
                           labelText: 'Contraseña *',
-                          helperText: 'Mínimo 8 caracteres.',
+                          helperText:
+                              'Mínimo 8 caracteres con mayúscula, número y símbolo.',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             tooltip: _obscurePassword
@@ -228,14 +241,41 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                         ),
-                        validator: (value) {
-                          final v = value ?? '';
-                          if (v.isEmpty) return 'Escribe una contraseña.';
-                          if (v.length < 8) {
-                            return 'Debe tener al menos 8 caracteres.';
-                          }
-                          return null;
-                        },
+                        validator: Validators.password,
+                      ),
+                      // Live checklist — cada regla queda ✓ mientras el
+                      // usuario escribe, sin depender de tocar "Crear cuenta".
+                      const SizedBox(height: 8),
+                      PasswordStrengthMeter(password: _passwordController.text),
+                      const SizedBox(height: 14),
+
+                      TextFormField(
+                        controller: _confirmController,
+                        obscureText: _obscureConfirm,
+                        autofillHints: const [AutofillHints.newPassword],
+                        textInputAction: TextInputAction.next,
+                        onChanged: _clearErrorIfAny,
+                        decoration: InputDecoration(
+                          labelText: 'Confirmar contraseña *',
+                          prefixIcon: const Icon(Icons.lock_reset),
+                          suffixIcon: IconButton(
+                            tooltip: _obscureConfirm
+                                ? 'Mostrar contraseña'
+                                : 'Ocultar contraseña',
+                            icon: Icon(
+                              _obscureConfirm
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
+                            ),
+                          ),
+                        ),
+                        validator: (v) => Validators.passwordMatch(
+                          v,
+                          password: _passwordController.text,
+                        ),
                       ),
                       const SizedBox(height: 22),
 
@@ -249,10 +289,20 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.phone,
                           textInputAction: TextInputAction.next,
                           onChanged: _clearErrorIfAny,
+                          // Only digits + `+` for the international prefix;
+                          // spaces / dashes get dropped as the user types.
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[\d+]')),
+                            LengthLimitingTextInputFormatter(13),
+                          ],
                           decoration: const InputDecoration(
                             labelText: 'Teléfono',
+                            hintText: '09XXXXXXXX o +5939XXXXXXXX',
                             prefixIcon: Icon(Icons.phone_outlined),
                           ),
+                          // Optional field: only validate the shape when
+                          // the user actually wrote something.
+                          validator: (v) => Validators.phoneEcuador(v),
                         ),
                         right: TextFormField(
                           controller: _cedulaController,
@@ -290,7 +340,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       if (error != null) ...[
                         const SizedBox(height: 16),
-                        _ErrorBanner(message: error.message),
+                        FeedbackBanner.error(error.message),
                       ],
 
                       const SizedBox(height: 22),
@@ -307,7 +357,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               )
                             : const Icon(Icons.person_add_alt),
                         label: Text(
-                          controller.isBusy ? 'Creando cuenta...' : 'Crear cuenta',
+                          controller.isBusy
+                              ? 'Creando cuenta...'
+                              : 'Crear cuenta',
                         ),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
@@ -322,12 +374,13 @@ class _RegisterPageState extends State<RegisterPage> {
                             TextButton(
                               onPressed: controller.isBusy
                                   ? null
-                                  : () => Navigator.of(context).pushReplacementNamed(
-                                      '/login',
-                                      arguments: ModalRoute.of(
-                                        context,
-                                      )?.settings.arguments,
-                                    ),
+                                  : () => Navigator.of(context)
+                                        .pushReplacementNamed(
+                                          '/login',
+                                          arguments: ModalRoute.of(
+                                            context,
+                                          )?.settings.arguments,
+                                        ),
                               child: const Text('Iniciar sesión'),
                             ),
                           ],
@@ -379,9 +432,7 @@ class _TwoCol extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compact) {
-      return Column(
-        children: [left, const SizedBox(height: 14), right],
-      );
+      return Column(children: [left, const SizedBox(height: 14), right]);
     }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,41 +441,6 @@ class _TwoCol extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(child: right),
       ],
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.errorSoft,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w600,
-                height: 1.35,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

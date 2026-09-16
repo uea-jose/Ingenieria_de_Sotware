@@ -316,6 +316,22 @@ model Venta {
   total     Decimal     @default(0) @db.Decimal(10, 2)
   fecha     DateTime    @default(now())
 
+  // ─── Delivery snapshot ────────────────────────────────────────────
+  // Captured at checkout time and never mutated afterwards. Keeps the
+  // pedido histórico consistent even if the customer edits their
+  // Cliente profile later. All fields are nullable to preserve
+  // backwards compatibility with pre-migration rows (id ≤ 5).
+  //
+  // Frontend enforces required for direccion + ciudad + telefono when
+  // creating a NEW sale; lat/lng and referencia stay optional at both
+  // ends (the user can decline GPS).
+  direccionEntrega  String?  @db.VarChar(255)
+  ciudadEntrega     String?  @db.VarChar(80)
+  referenciaEntrega String?  @db.VarChar(255)
+  telefonoContacto  String?  @db.VarChar(30)
+  latitudEntrega    Decimal? @db.Decimal(10, 7)
+  longitudEntrega   Decimal? @db.Decimal(10, 7)
+
   cliente               Cliente?               @relation(fields: [clienteId], references: [id])
   usuario               Usuario?               @relation(fields: [usuarioId], references: [id])
   detalles              DetalleVenta[]

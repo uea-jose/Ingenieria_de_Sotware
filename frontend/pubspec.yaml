@@ -32,6 +32,11 @@ dependencies:
     sdk: flutter
   google_fonts: ^6.2.2
   http: ^1.6.0
+  # Geolocation for the "Usar mi ubicación" button in checkout.
+  # Web-only path (uses navigator.geolocation). Version pinned to the
+  # latest that stays compatible with our Dart 3.12 / Flutter 3.44 stack
+  # without forcing an SDK upgrade.
+  geolocator: ^14.0.3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_design_tokens.dart';
+import '../../core/validators.dart';
 import '../../data/api/api_service.dart';
 import '../../data/api/auth_service.dart';
 import '../../data/api/orders_api.dart';
@@ -9,7 +10,9 @@ import '../../models/catalog_data.dart';
 import '../../models/order.dart';
 import '../../models/product.dart';
 import '../../state/auth_scope.dart';
+import '../../widgets/checkout/delivery_address_panel.dart';
 import '../../widgets/feedback/error_view.dart';
+import '../../widgets/feedback/feedback_banner.dart';
 import '../../widgets/feedback/loading_view.dart';
 
 /// Private route: `/checkout`.
@@ -71,7 +74,19 @@ class _PaymentOption {
 class _CheckoutPageState extends State<CheckoutPage> {
   late Future<CatalogData> _catalogFuture;
   final _ordersApi = OrdersApi();
+  final _formKey = GlobalKey<FormState>();
   final Map<int, int> _cartQuantities = {};
+
+  // Delivery snapshot controllers — the DeliveryAddressPanel writes here
+  // (both on manual edits and on a successful GPS capture) and _confirm
+  // reads them to build the payload for POST /ventas.
+  final _direccionController = TextEditingController();
+  final _ciudadController = TextEditingController();
+  final _referenciaController = TextEditingController();
+  final _telefonoController = TextEditingController();
+  double? _latitudCapturada;
+  double? _longitudCapturada;
+
   String _paymentMethodId = 'TARJETA';
   _CheckoutStage _stage = _CheckoutStage.form;
   Order? _createdOrder;
@@ -88,7 +103,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void dispose() {
     _ordersApi.dispose();
+    _direccionController.dispose();
+    _ciudadController.dispose();
+    _referenciaController.dispose();
+    _telefonoController.dispose();
     super.dispose();
+  }
+
+  void _onCoordsCaptured(double lat, double lng, String? _) {
+    setState(() {
+      _latitudCapturada = lat;
+      _longitudCapturada = lng;
+    });
+  }
+
+  void _onCoordsCleared() {
+    if (_latitudCapturada == null && _longitudCapturada == null) return;
+    setState(() {
+      _latitudCapturada = null;
+      _longitudCapturada = null;
+    });
   }
 
   Future<void> _confirm(List<Product> products) async {
@@ -115,6 +149,40 @@ class _CheckoutPageState extends State<CheckoutPage> {
       return;
     }
 
+    // Validate the delivery address form (direccion / ciudad / telefono
+    // are required, referencia optional). If any field is invalid the
+    // Form paints its own inline errors; we stop here without sending.
+    if (!(_formKey.currentState?.validate() ?? true)) {
+      setState(() {
+        _errorMessage = 'Revisa los datos de entrega antes de continuar.';
+      });
+      return;
+    }
+
+    // Normalise the phone to the canonical Ecuadorian shape (09XXXXXXXX)
+    // before persisting it. Falls back to the raw text if the normaliser
+    // can't parse it — the field validator already rejected malformed
+    // values, so `raw` here is a well-formed variant we didn't map.
+    final telefonoRaw = _telefonoController.text.trim();
+    final telefonoNormalizado =
+        normalizePhoneEcuador(telefonoRaw) ??
+        (telefonoRaw.isEmpty ? null : telefonoRaw);
+
+    final snapshot = DeliverySnapshotDraft(
+      direccionEntrega: _direccionController.text.trim().isEmpty
+          ? null
+          : _direccionController.text.trim(),
+      ciudadEntrega: _ciudadController.text.trim().isEmpty
+          ? null
+          : _ciudadController.text.trim(),
+      referenciaEntrega: _referenciaController.text.trim().isEmpty
+          ? null
+          : _referenciaController.text.trim(),
+      telefonoContacto: telefonoNormalizado,
+      latitudEntrega: _latitudCapturada,
+      longitudEntrega: _longitudCapturada,
+    );
+
     setState(() {
       _stage = _CheckoutStage.submitting;
       _errorMessage = null;
@@ -122,7 +190,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     try {
-      final result = await _ordersApi.createOrder(token: token, items: items);
+      final result = await _ordersApi.createOrder(
+        token: token,
+        items: items,
+        entrega: snapshot,
+      );
       CartStorage.clear();
       if (!mounted) return;
       setState(() {
@@ -207,42 +279,69 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1120),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 900;
-                    final summary = _OrderSummary(
-                      products: cartProducts,
-                      quantities: _cartQuantities,
-                    );
-                    final actions = _PaymentPanel(
-                      selectedMethodId: _paymentMethodId,
-                      onMethodChanged: (id) =>
-                          setState(() => _paymentMethodId = id),
-                      total: _computeTotal(cartProducts),
-                      isSubmitting: _stage == _CheckoutStage.submitting,
-                      errorMessage: _errorMessage,
-                      onConfirm: () => _confirm(cartProducts),
-                    );
+                // A single Form wraps summary + delivery panel + payment
+                // panel so `_formKey.currentState.validate()` triggers
+                // the required-field messages inside `DeliveryAddressPanel`
+                // when the user taps "Confirmar pedido".
+                child: Form(
+                  key: _formKey,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 900;
+                      final summary = _OrderSummary(
+                        products: cartProducts,
+                        quantities: _cartQuantities,
+                      );
+                      final delivery = DeliveryAddressPanel(
+                        direccionController: _direccionController,
+                        ciudadController: _ciudadController,
+                        referenciaController: _referenciaController,
+                        telefonoController: _telefonoController,
+                        onCoordsCaptured: _onCoordsCaptured,
+                        onCoordsCleared: _onCoordsCleared,
+                      );
+                      final actions = _PaymentPanel(
+                        selectedMethodId: _paymentMethodId,
+                        onMethodChanged: (id) =>
+                            setState(() => _paymentMethodId = id),
+                        total: _computeTotal(cartProducts),
+                        isSubmitting: _stage == _CheckoutStage.submitting,
+                        errorMessage: _errorMessage,
+                        onConfirm: () => _confirm(cartProducts),
+                      );
 
-                    if (compact) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                      if (compact) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            summary,
+                            const SizedBox(height: 18),
+                            delivery,
+                            const SizedBox(height: 18),
+                            actions,
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          summary,
-                          const SizedBox(height: 18),
-                          actions,
+                          Expanded(flex: 6, child: summary),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                delivery,
+                                const SizedBox(height: 18),
+                                actions,
+                              ],
+                            ),
+                          ),
                         ],
                       );
-                    }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 6, child: summary),
-                        const SizedBox(width: 20),
-                        Expanded(flex: 5, child: actions),
-                      ],
-                    );
-                  },
+                    },
+                  ),
                 ),
               ),
             ),
@@ -470,34 +569,9 @@ class _PaymentPanel extends StatelessWidget {
           _ReadOnlyField(label: 'Correo', value: user?.email ?? '—'),
           if (user != null && user.rol != 'Cliente') ...[
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.bgPeach,
-                borderRadius: BorderRadius.circular(AppRadii.card),
-                border: Border.all(color: AppColors.warning),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: AppColors.warning,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tu rol (${user.rol}) no tiene un perfil de cliente asociado. '
-                      'Inicia sesión con una cuenta cliente para completar la compra.',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 12,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            FeedbackBanner.warning(
+              'Tu rol (${user.rol}) no tiene un perfil de cliente asociado. '
+              'Inicia sesión con una cuenta cliente para completar la compra.',
             ),
           ],
           const SizedBox(height: 22),
@@ -542,37 +616,7 @@ class _PaymentPanel extends StatelessWidget {
           ),
           if (errorMessage != null) ...[
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.errorSoft,
-                borderRadius: BorderRadius.circular(AppRadii.card),
-                border: Border.all(
-                  color: AppColors.error.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: AppColors.error,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      errorMessage!,
-                      style: const TextStyle(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w600,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            FeedbackBanner.error(errorMessage!),
           ],
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -817,30 +861,14 @@ class _SuccessView extends StatelessWidget {
                 ),
                 if (stockWarnings.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  for (final w in stockWarnings)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            size: 16,
-                            color: AppColors.warning,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              w,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // Consolidamos todas las alertas de inventario en un
+                  // único banner de warning con lista en el mismo cuerpo,
+                  // en lugar de N filas sueltas con estilo distinto.
+                  FeedbackBanner.warning(
+                    stockWarnings.length == 1
+                        ? stockWarnings.first
+                        : 'Se detectaron ${stockWarnings.length} alertas de stock:\n• ${stockWarnings.join('\n• ')}',
+                  ),
                 ],
                 const SizedBox(height: 22),
                 FilledButton.icon(

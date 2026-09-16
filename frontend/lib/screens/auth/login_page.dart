@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_design_tokens.dart';
+import '../../core/validators.dart';
 import '../../state/auth_scope.dart';
+import '../../widgets/feedback/app_feedback.dart';
+import '../../widgets/feedback/feedback_banner.dart';
 
 /// Public route: `/login`.
 ///
@@ -134,14 +137,7 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: 'Correo electrónico',
                           prefixIcon: Icon(Icons.mail_outline),
                         ),
-                        validator: (value) {
-                          final v = value?.trim() ?? '';
-                          if (v.isEmpty) return 'Escribe tu correo.';
-                          if (!v.contains('@') || !v.contains('.')) {
-                            return 'Formato de correo no válido.';
-                          }
-                          return null;
-                        },
+                        validator: Validators.email,
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
@@ -177,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       if (error != null) ...[
                         const SizedBox(height: 16),
-                        _ErrorBanner(message: error.message),
+                        FeedbackBanner.error(error.message),
                       ],
                       const SizedBox(height: 22),
                       FilledButton.icon(
@@ -210,15 +206,10 @@ class _LoginPageState extends State<LoginPage> {
                         runSpacing: 4,
                         children: [
                           TextButton(
-                            onPressed: () =>
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'La recuperación de contraseña se habilitará en una siguiente etapa.',
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                ),
+                            onPressed: () => AppFeedback.info(
+                              context,
+                              'La recuperación de contraseña se habilitará en una siguiente etapa.',
+                            ),
                             child: const Text('Olvidé mi contraseña'),
                           ),
                           TextButton(
@@ -241,41 +232,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.errorSoft,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w600,
-                height: 1.35,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
