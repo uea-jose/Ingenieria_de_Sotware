@@ -46,6 +46,38 @@ class ApiService {
     throw Exception('Producto no encontrado.');
   }
 
+  /// Loads a list of products used to power "related products" sections
+  /// in the product detail view. The backend supports `marcaId` and
+  /// `categoriaId` as query parameters (see
+  /// `backend/src/modules/productos/productos.service.js`
+  /// `construirFiltros`), so the filter runs server-side.
+  ///
+  /// Client-side we exclude [excludeId] (the product currently shown)
+  /// and cap the result at [limit] items to keep the horizontal
+  /// carousel tidy.
+  static Future<List<Product>> loadRelatedProducts({
+    required int excludeId,
+    int? brandId,
+    int? categoryId,
+    int limit = 6,
+  }) async {
+    final params = <String>[];
+    if (brandId != null) params.add('marcaId=$brandId');
+    if (categoryId != null) params.add('categoriaId=$categoryId');
+    params.add('activo=true');
+    final query = params.join('&');
+    try {
+      final json = await _getJson('$apiBaseUrl/productos?$query');
+      final all = _listFrom(json).map(Product.fromJson);
+      return all
+          .where((p) => p.id != excludeId)
+          .take(limit)
+          .toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// Returns the full master accord catalogue.
   static Future<List<AromaAccord>> loadAccords() async {
     final json = await _getJson('$apiBaseUrl/acordes');

@@ -8,7 +8,6 @@ import '../../models/aroma_accord.dart';
 import '../../models/product.dart';
 import '../../widgets/layout/top_navigation.dart';
 import '../../widgets/product/accord_bar_row.dart';
-import '../product_detail/product_detail_page.dart';
 
 /// Public "Buscar por acordes" page — Fragrantica style.
 ///
@@ -146,16 +145,12 @@ class _AccordSearchPageState extends State<AccordSearchPage> {
   }
 
   void _openProduct(Product product) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ProductDetailPage(
-          productId: product.id,
-          cartCount: widget.cartCount,
-          initialProduct: product,
-          onAddToCart: widget.onAddToCart ?? (_) {},
-        ),
-      ),
-    );
+    // Named route so the URL is shareable. The product is passed as
+    // `arguments` to avoid the roundtrip; the detail page still hits
+    // the API to load the accord profile and up-to-date stock.
+    Navigator.of(
+      context,
+    ).pushNamed('/producto/${product.id}', arguments: product);
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────

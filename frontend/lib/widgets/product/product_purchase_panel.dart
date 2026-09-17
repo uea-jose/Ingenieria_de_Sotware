@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_design_tokens.dart';
 import '../../core/utils/price_formatter.dart';
 import '../../models/product.dart';
+import '../feedback/app_feedback.dart';
 
 class ProductPurchasePanel extends StatelessWidget {
   const ProductPurchasePanel({
@@ -13,6 +14,16 @@ class ProductPurchasePanel extends StatelessWidget {
 
   final Product product;
   final ValueChanged<Product> onAddToCart;
+
+  // Placeholder handler: the real favourites module ships in the next
+  // step. Uses the same copy as the placeholder on ProductCard so users
+  // see a consistent message across the app.
+  void _handleFavoritePlaceholder(BuildContext context) {
+    AppFeedback.info(
+      context,
+      '${product.name} marcado como favorito para una siguiente iteración.',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +65,10 @@ class ProductPurchasePanel extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _InfoChip(icon: Icons.category_outlined, label: product.category.name),
+              _InfoChip(
+                icon: Icons.category_outlined,
+                label: product.category.name,
+              ),
               if (volume != null)
                 _InfoChip(icon: Icons.straighten_outlined, label: volume),
               _InfoChip(
@@ -78,15 +92,57 @@ class ProductPurchasePanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: hasStock ? () => onAddToCart(product) : null,
-              icon: const Icon(Icons.add_shopping_cart),
-              label: Text(hasStock ? 'Agregar al carrito' : 'Sin stock'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: hasStock ? () => onAddToCart(product) : null,
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: Text(hasStock ? 'Agregar al carrito' : 'Sin stock'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              _FavoriteButton(
+                onPressed: () => _handleFavoritePlaceholder(context),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Outlined favourite toggle placeholder. Visual only for now — the
+/// real favourites feature ships in the next module. Matches the pink
+/// circular button already used on `ProductCard` so both surfaces look
+/// consistent.
+class _FavoriteButton extends StatelessWidget {
+  const _FavoriteButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Guardar en favoritos',
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: OutlinedButton(
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            padding: EdgeInsets.zero,
+            shape: const CircleBorder(),
+            side: const BorderSide(color: AppColors.primary),
+            foregroundColor: AppColors.primary,
+          ),
+          child: const Icon(Icons.favorite_border, size: 22),
+        ),
       ),
     );
   }

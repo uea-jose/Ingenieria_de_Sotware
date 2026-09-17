@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../features/admin/accord_editor/catalog_admin_page.dart';
 import '../features/admin/sales/admin_sales_page.dart';
+import '../models/product.dart';
+import '../screens/product_detail/product_detail_page.dart';
 import '../screens/accord_search/accord_search_page.dart';
 import '../screens/account/account_page.dart';
 import '../screens/auth/login_page.dart';
@@ -68,6 +70,7 @@ class _AromasStoreAppState extends State<AromasStoreApp> {
           '/checkout': (context) => const RequireAuth(child: CheckoutPage()),
           '/mis-pedidos': (context) => const RequireAuth(child: MyOrdersPage()),
         },
+        onGenerateRoute: _onGenerateRoute,
       ),
     );
   }
@@ -75,4 +78,36 @@ class _AromasStoreAppState extends State<AromasStoreApp> {
 
 class MyApp extends AromasStoreApp {
   const MyApp({super.key});
+}
+
+/// Route factory for dynamic paths. Static routes stay in
+/// [MaterialApp.routes]; only paths that need to parse a parameter fall
+/// through to this callback.
+///
+/// Supported patterns:
+/// - `/producto/:id` → [ProductDetailPage] with the parsed integer id.
+///   Accepts an optional [Product] as `RouteSettings.arguments` to avoid
+///   an API roundtrip when the caller already has the product in memory
+///   (see `home_page._openProductDetail`).
+///
+/// Returns `null` when the route name doesn't match any dynamic
+/// pattern, so [MaterialApp] can fall back to `onUnknownRoute` (or the
+/// default not-found behaviour).
+Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+  final name = settings.name ?? '/';
+
+  if (name.startsWith('/producto/')) {
+    final rawId = name.substring('/producto/'.length);
+    final parsedId = int.tryParse(rawId);
+    final initial = settings.arguments is Product
+        ? settings.arguments as Product
+        : null;
+    return MaterialPageRoute<void>(
+      settings: settings,
+      builder: (_) =>
+          ProductDetailPage(productId: parsedId ?? -1, initialProduct: initial),
+    );
+  }
+
+  return null;
 }

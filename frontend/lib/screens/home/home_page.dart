@@ -19,7 +19,6 @@ import '../../widgets/cart/cart_preview_bar.dart';
 import '../../widgets/feedback/error_view.dart';
 import '../../widgets/feedback/loading_view.dart';
 import '../../widgets/layout/top_navigation.dart';
-import '../product_detail/product_detail_page.dart';
 import 'demo_home_catalog.dart';
 import 'home_commercial_sections.dart';
 import 'home_search_box.dart';
@@ -181,19 +180,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openProductDetail(Product product) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => ProductDetailPage(
-          productId: product.id,
-          initialProduct: product,
-          cartCount: _cartCount,
-          onAddToCart: _addToCart,
-        ),
-      ),
-    );
+    // Uses the named route `/producto/:id` so the URL is shareable and
+    // survives a refresh in Flutter Web. The Product is passed via
+    // `arguments` so the detail can render immediately without a
+    // roundtrip. The detail page also honours the cart callback via
+    // CartStorage when the user comes in from a direct URL, but from
+    // here we still pass the in-memory `_addToCart` through — that path
+    // is a no-op on named routes, so we rely on the CartStorage
+    // fallback + a `setState` refresh on return to sync the badge.
+    await Navigator.of(
+      context,
+    ).pushNamed('/producto/${product.id}', arguments: product);
 
     if (mounted) {
-      setState(() {});
+      // Re-read from storage so items added inside the detail (fallback
+      // path) get reflected in the home badge and the cart preview.
+      setState(() {
+        _cartQuantities
+          ..clear()
+          ..addAll(CartStorage.load());
+      });
+      await _validateCart(showMessages: false);
     }
   }
 
