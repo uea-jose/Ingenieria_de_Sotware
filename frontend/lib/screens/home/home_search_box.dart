@@ -525,10 +525,21 @@ class _SearchProductCardState extends State<_SearchProductCard> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadii.card),
-                    child: const SizedBox(
+                    // Same image pipeline used by ProductCard: tries the
+                    // product's own imagenUrl first, then the bundled
+                    // CatalogImageResolver, and only falls back to the
+                    // Essenza logo (ProductPlaceholder) when nothing
+                    // matches. `compact: true` reduces padding/shadow
+                    // to fit this smaller thumbnail slot.
+                    child: SizedBox(
                       height: 150,
                       width: double.infinity,
-                      child: ProductPlaceholder(),
+                      child: ProductImage(
+                        imageUrl: product.imageUrl,
+                        productName: product.name,
+                        brandName: product.brand.name,
+                        compact: true,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),

@@ -5,6 +5,11 @@ import '../../app/app_design_tokens.dart';
 /// Store brand mark. Renders the Essenza / Aromas Store logo inside a
 /// rounded square, optionally followed by a two-line brand caption.
 ///
+/// The whole block is a clickable "home" affordance: tapping either the
+/// logo box or the "Aromas Store · Fragancias y bienestar" caption
+/// navigates to `/` from any inner page. If the user is already at `/`
+/// the tap is a no-op to avoid rebuilding the home stack.
+///
 /// The logo is loaded from `assets/img/essenza_logo.png` and uses
 /// [BoxFit.contain] so it never deforms nor overflows its container. When
 /// [compact] is true only the logo box is shown (used inside the mobile
@@ -16,11 +21,20 @@ class BrandMark extends StatelessWidget {
 
   static const String _logoAsset = 'assets/img/essenza_logo.png';
 
+  void _goHome(BuildContext context) {
+    // Skip the navigation when we're already sitting at `/`. Keeps
+    // hitting the logo on the home page as a friendly no-op instead of
+    // rebuilding the whole page.
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    if (currentRoute == '/') return;
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final boxSize = compact ? 38.0 : 44.0;
 
-    return Row(
+    final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
@@ -67,6 +81,19 @@ class BrandMark extends StatelessWidget {
           ),
         ],
       ],
+    );
+
+    return Semantics(
+      button: true,
+      label: 'Ir al inicio de Aromas Store',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _goHome(context),
+          child: content,
+        ),
+      ),
     );
   }
 }
